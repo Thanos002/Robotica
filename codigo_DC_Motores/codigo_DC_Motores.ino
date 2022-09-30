@@ -5,10 +5,8 @@
 #define ENCA 2    // ENA conectada al pin 3 de Arduino
 #define ENCB 4    //ENB
 #define PWM1 5     // PWM Velocidad
-int ENCA_DATA;
-int ENCB_DATA;
 
-long dir;
+int dir;
 int grad;
 int pulsos = 0;
 int valor_pulsos = 0;
@@ -17,8 +15,7 @@ const int ratio = 1580;
 //int contador = 0;
 //int contador2 = 0;
 int rounds = 0;
-int limit = 1490 * 1;
-int operacion_int = 1;
+int limit;
 
 volatile int posi = 0; // specify posi as volatile
 long prevT = 0;
@@ -36,96 +33,115 @@ void setup() {
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
 
-  Serial.println("grad pos");
 }
 
-
 void loop() {
+
+  Serial.println("INICIO grad pos");
   // wait until serial available
   while (!Serial.available()) {
     Serial.println("Esperando operación");
     Serial.println("Operación: dir, valor");
     Serial.println("dir: izquierda 0, derecha 1");
+    delay(1000);
   }
   // Convert String input to int
   dir = (int)Serial.readStringUntil(',').toInt();
   grad = (int)Serial.readStringUntil('\n').toInt();
-
-  // check if input is digit
-  if (!isdigit(dir) || !isdigit(grad)) {
-    Serial.println("Numero invalido");
-    return;
-  }
+  Serial.println(dir);
+  Serial.println(grad);
+  /*
+    // check if input is digit
+    if (!isdigit(dir) || !isdigit(grad)) {
+      Serial.println("Numero invalido");
+      return;
+    }*/
   // convert grad to pulsos
   if (grad >= 0 && grad <= 360) {
     pulsos = grad * (ratio / 360);
   }
   else {
     Serial.print("Valor por encima de 360º");
+    return;
   }
-
-  //switch for opcode handling
-  switch (operacion_int) {
+  switch (dir) {
     case 0:
       Serial.println("Giro hacia la izquierda");
-      grad = -grad;
+      pulsos = -pulsos;
+      break;
     case 1:
       Serial.println("Giro hacia la derecha");
-    default: Serial.println("Operación no reconocida");
+      break;
+    default:
+      Serial.println("Operación no reconocida");
+      return;
   }
+  float e = 9999;
+  while (fabs(e) > 1) {
+    Serial.print("e=");
+    Serial.println(e);
 
-  // PID constants
-  float kp = 1;
-  float kd = 0.025;
-  float ki = 0.0;
+    // PID constants
+    float kp = 100;
+    float kd = 0.15;
+    float ki = 0.003;
 
-  // time difference
-  long currT = micros();
-  float deltaT = ((float) (currT - prevT)) / ( 1.0e6 );
-  prevT = currT;
+    // time difference
+    long currT = micros();
+    float deltaT = ((float) (currT - prevT)) / ( 1.0e5 );
+    prevT = currT;
 
-  // Read the position in an atomic block to avoid a potential
-  // misread if the interrupt coincides with this code running
-  int pos = 0;
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-    pos = posi;
+    // Read the position in an atomic block to avoid a potential
+    // misread if the interrupt coincides with this code running
+    int pos = 0;
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+      pos = posi;
+    }
+
+    // error
+
+    e = posi - pulsos;
+
+    // derivative
+    float dedt = (e - eprev) / (deltaT);
+
+    // integral
+    eintegral = eintegral + e * deltaT;
+
+    // control signal
+    float u = kp * e + kd * dedt + ki * eintegral;
+
+    // motor power
+    float pwr = fabs(u);
+    if ( pwr > 255 ) {
+      pwr = 255;
+    }
+
+    // motor direction
+    int dir = 1;
+    if (u < 0) {
+      dir = -1;
+    }
+
+    // signal the motor
+    setMotor(dir, pwr, PWM1, IN1, IN2);
+
+
+    // store previous error
+    eprev = e;
+
+    Serial.print(pulsos);
+    Serial.print(" ");
+    Serial.print(pos);
+    Serial.println();
   }
-
-  // error
-  int e = pos - grad;
-
-  // derivative
-  float dedt = (e - eprev) / (deltaT);
-
-  // integral
-  eintegral = eintegral + e * deltaT;
-
-  // control signal
-  float u = kp * e + kd * dedt + ki * eintegral;
-
-  // motor power
-  float pwr = fabs(u);
-  if ( pwr > 255 ) {
-    pwr = 255;
-  }
-
-  // motor direction
-  int dir = 1;
-  if (u < 0) {
-    dir = -1;
-  }
-
-  // signal the motor
-  setMotor(dir, pwr, PWM1, IN1, IN2);
-
-
-  // store previous error
-  eprev = e;
-
-  Serial.print(grad);
-  Serial.print(" ");
-  Serial.print(pos);
-  Serial.println();
+  e = 0;
+  setMotor(0, 0, PWM1, IN1, IN2);
+  pulsos = 0;
+  posi = 0;
+  prevT = 0;
+  eprev = 0;
+  eintegral = 0;
 }
 
 void setMotor(int dir, int pwmVal, int pwm, int in1, int in2) {
@@ -142,6 +158,8 @@ void setMotor(int dir, int pwmVal, int pwm, int in1, int in2) {
   else {
     digitalWrite(in1, LOW);
     digitalWrite(in2, LOW);
+    dir = 0;
+    pulsos = 0;
   }
 }
 
