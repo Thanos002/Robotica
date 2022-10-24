@@ -10,7 +10,8 @@ int dir;
 int grad;
 int pulsos = 0;
 int valor_pulsos = 0;
-const int ratio = 1800;
+const int ratio = 1792;
+int iterations = 0;
 
 //int contador = 0;
 //int contador2 = 0;
@@ -37,41 +38,37 @@ void setup() {
 
 void loop() {
 
-  Serial.println("INICIO grad pos");
   // wait until serial available
   if (Serial.available()) {
-    Serial.println("Nueva operación");
-    Serial.println("Operación: dir, valor");
-    Serial.println("dir: izquierda 0, derecha 1");
+    //Serial.println("Nueva operación");
+    //Serial.println("Operación: dir, valor");
+    //Serial.println("dir: izquierda 0, derecha 1");
     dir = (int)Serial.readStringUntil(',').toInt();
     grad = (int)Serial.readStringUntil('\n').toInt();
-    Serial.println(dir);
-    Serial.println(grad);
     if (grad >= 0 && grad <= 360) {
       pulsos = grad * (ratio / 360);
     }
     else {
-      Serial.print("Valor por encima de 360º");
+      //Serial.print("Valor por encima de 360º");
       return;
     }
     switch (dir) {
       case 0:
-        Serial.println("Giro hacia la izquierda");
+        //Serial.println("Giro hacia la izquierda");
         pulsos = -pulsos;
         break;
       case 1:
-        Serial.println("Giro hacia la derecha");
+        //Serial.println("Giro hacia la derecha");
         break;
       default:
-        Serial.println("Operación no reconocida");
+        //Serial.println("Operación no reconocida");
         return;
     }
   }
-  Serial.println("PID INIT");
   // PID constants
   float kp = 4.5;
   float kd = 0.3;
-  float ki = 0.1;
+  float ki = 0.2;
 
   // time difference
   long currT = micros();
@@ -84,7 +81,15 @@ void loop() {
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
     pos = posi;
   }
-
+  if(iterations%200==0){
+  Serial.print(millis());
+  Serial.print(",");
+  Serial.print(pulsos);
+  Serial.print(",");
+  Serial.println(posi);
+  }
+  iterations = iterations +1;
+  
   // error
 
   float e = posi - pulsos;
@@ -116,11 +121,6 @@ void loop() {
 
   // store previous error
   eprev = e;
-
-  Serial.print(pulsos);
-  Serial.print(" ");
-  Serial.print(pos);
-  Serial.println();
 }
 
 void setMotor(int dir, int pwmVal, int pwm, int in1, int in2) {
