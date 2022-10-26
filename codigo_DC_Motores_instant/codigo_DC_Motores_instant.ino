@@ -36,6 +36,9 @@
 #define PWMD 2  // PWM Velocidad
 #define PWMI 3
 
+// motor izquierda: brazo extremo
+// motor derecha: brazo interior
+
 int dird;
 int gradd;
 int diri;
