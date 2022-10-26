@@ -3,42 +3,54 @@
 
 // Pinout para el Arduino Mega 2540
 
+//motor derecho
 #define DCD_1 22
 #define DCD_2 23
 
+//motor izquierdo
 #define DCI_1 24
 #define DCI_2 25
 
+// encoder pins (p.e. ENCDA - encoder del motor derecho pin A)
 #define ENCDA 26
 #define ENCDB 27
 #define ENCIA 28
 #define ENCIB 29
 
+// pins del stepper motor
 #define STEP 30
 #define DIR 31
 
+// pins del stepper driver 
 #define SRESET 32    // resets internal logic and step table, defualt inactive/low during operation
 #define SLEEP 33  // low power mode, needs 1ms to reactivate
 #define ENAPIN 34    // Enables outputs, defualt inactive/low during operation
 
-// para micropasos:
+// para micropasos del stepper:
 #define MS1 35
 #define MS2 36
 #define MS3 37
 
-#define SERVO1 38
-#define SERVO2 39
+/pins de los servos
+#define SERVO1 38 // servo girar
+#define SERVO2 39 // servo abrir
 
-#define FIN1 40
-#define FIN2 41
-#define FIN3 42
+// pins de fin de carrera (p.e. FINDE fin de motor del extremo (izquierdo) a la posicion derecha)
+#define FINDE 40
+#define FINDI 41
+#define FINII 42
+#define FINIE 43
+#define FINZB 44
+#define FINZA 45
 
+//pins pwm motores DC
 #define PWMD 2  // PWM Velocidad
 #define PWMI 3
 
 // motor izquierda: brazo extremo
 // motor derecha: brazo interior
 
+int posprev;
 int dird;
 int gradd;
 int diri;
@@ -47,6 +59,11 @@ int pulsosd = 0;
 int pulsosi = 0;
 const int ratio = 6316;  //1579*4
 int iterations = 0;
+
+const int DGRADOSMAX = 190;
+const int IGRADOSMAX = 280;
+const int DPULSOSMAX = (float)DGRADOSMAX*(float)(ratio/360)*4.5; //15000
+const int IPULSOSMAX = (float)IGRADOSMAX*(float)(ratio/360)*7.281125; //22106
 
 //int contador = 0;
 //int contador2 = 0;
@@ -72,6 +89,38 @@ int giro;
 
 Servo girar;
 Servo abrir;
+
+home()
+float home(int motorpin1, int motorpin2, int finpin, int finpin2, int PWMpin, int pos, int posi, int DPULSOSMAX){
+  analogWrite(PWMpin, 30);
+  posprev=pos;
+  while(digitalRead(finpin)==0){
+    digitalWrite(motorpin1, HIGH);
+    digitalWrite(motorpin2, LOW);
+  }
+  digitalWrite(motorpin1, LOW);
+  digitalWrite(motorpin2, LOW);
+  
+  float delta = fabs(posprev-posi);
+  posi = posi-DPULSOSMAX/2;
+
+}
+
+float homestepper(int dirpin, int steppin, int finpin){
+  while(digitalRead(finpin)==0){
+    digitalWrite(dirpin,LOW);
+    digitalWrite(steppin,HIGH); 
+    delayMicroseconds(500); 
+    digitalWrite(steppin,LOW); 
+    delayMicroseconds(500); 
+  }
+  digitalWrite(steppin, LOW);
+  digitalWrite(steppin, LOW);
+
+  alto =0;
+
+  }
+
 
 void setup() {
   Serial.begin(9600);
@@ -108,7 +157,15 @@ void setup() {
   girar.attach(SERVO1);
   abrir.attach(SERVO2);
 
-  pinMode(FIN1, INPUT);
+  pinMode(FINII, INPUT_PULLUP);
+  pinMode(FINDI, INPUT_PULLUP);
+  pinMode(FINIE, INPUT_PULLUP);
+  pinMode(FINDE, INPUT_PULLUP);
+  pinMode(FINZB, INPUT_PULLUP);
+  pinMode(FINZA, INPUT_PULLUP);
+
+  homestepper();
+  home();
  
 }
 
@@ -144,11 +201,11 @@ void loop() {
 
   // Read the position in an atomic block to avoid a potential
   // misread if the interrupt coincides with this code running
-  int posd = 0;
-  int posi = 0;
+  int posd_atomic = 0;
+  int posi_atomic = 0;
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-    posd = posid;
-    posi = posii;
+    posd_atomic = posid;
+    posi_atomic = posii;
   }
   if (iterations % 200 == 0) {
     Serial.print(1);
@@ -265,7 +322,7 @@ void setStepper(int steps){
     delayMicroseconds(500); 
   }
   delay(500);
-  digitalWrite(SLEEP,0);
+  digitalWrite(SLEEP,1);
   prevalto=steps;
 }
 
@@ -369,16 +426,20 @@ void readEncoderIBF() {  //when A Rising or B Falling
 }
 
 //conversion de grados a pulsos del motor derecho /brazo interno
-float brazoDgrados(float grados){
+float Dgrados2pulsos(float grados){
   return (float)grados*(float)(ratio/360)*4.5;
 }
 
 // motor izquierdo
-float brazoIgrados(float grados){
+float Igrados2pulsos(float grados){
   return (float)grados*(float)(ratio/360)*7.281125;
 }
 
 // stepper
-float mmToPulsos(float mm){
+float mm2Pulsos(float mm){
   return (float)mm*100;
+}
+
+
+
 }
