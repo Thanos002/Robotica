@@ -56,6 +56,11 @@ float alto;
 float prevalto;
 bool pinza;
 
+// numero maximo de pasos/pulsos
+int maxD;
+int maxR;
+int maxS;
+
 volatile int posid = 0;  // specify posi as volatile
 long prevT = 0;
 float eprevd = 0;
@@ -104,6 +109,7 @@ void setup() {
   abrir.attach(SERVO2);
 
   pinMode(FIN1, INPUT);
+ 
 }
 
 void loop() {
@@ -360,4 +366,19 @@ void readEncoderIBF() {  //when A Rising or B Falling
   } else {
     posii++;
   }
+}
+
+//conversion de grados a pulsos del motor derecho /brazo interno
+float brazoDgrados(float grados){
+  return (float)grados*(float)(ratio/360)*4.5;
+}
+
+// motor izquierdo
+float brazoIgrados(float grados){
+  return (float)grados*(float)(ratio/360)*7.281125;
+}
+
+// stepper
+float mmToPulsos(float mm){
+  return (float)mm*100;
 }
