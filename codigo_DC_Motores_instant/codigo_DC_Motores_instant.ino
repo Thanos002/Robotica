@@ -8,40 +8,38 @@
 #define DCD_2 23
 
 //motor izquierdo
-#define DCI_1 24
-#define DCI_2 25
+#define DCI_1 53
+#define DCI_2 52
 
 // encoder pins (p.e. ENCDA - encoder del motor derecho pin A)
-#define ENCDA 26
-#define ENCDB 27
-#define ENCIA 28
-#define ENCIB 29
+#define ENCDA 49
+#define ENCDB 48
+#define ENCIA 51
+#define ENCIB 50
 
 // pins del stepper motor
-#define STEP 30
-#define DIR 31
+#define STEP 25
+#define DIR 27
 
 // pins del stepper driver
-#define SRESET 32  // resets internal logic and step table, defualt inactive/low during operation
-#define SLEEP 33   // low power mode, needs 1ms to reactivate
-#define ENAPIN 34  // Enables outputs, defualt inactive/low during operation
+#define SRESET 31  // resets internal logic and step table, defualt HIGH during operation
+#define SLEEP 29   // low power mode, needs 1ms to reactivate, HIGH during operation
+#define ENAPIN 39  // Enables outputs, defualt inactive/low during operation
 
 // para micropasos del stepper:
-#define MS1 35
-#define MS2 36
-#define MS3 37
+#define MS1 37
+#define MS2 35
+#define MS3 33
 
 //pins de los servos
-#define SERVO1 38  // servo girar
-#define SERVO2 39  // servo abrir
+#define SERVO1 9   // servo girar
+#define SERVO2 10  // servo abrir
 
 // pins de fin de carrera (p.e. FINDE fin de motor del extremo (izquierdo) a la posicion derecha)
-#define FINDE 40
-#define FINDI 41
-#define FINII 42
-#define FINIE 43
-#define FINZB 44
-#define FINZA 45
+#define FINE 40
+#define FINI 44
+#define FINZ 42
+
 
 //pins pwm motores DC
 #define PWMD 2  // PWM Velocidad
@@ -63,8 +61,8 @@ int iterations = 0;
 // numero de pulsos/grados maximos
 const int DGRADOSMAX = 190;
 const int IGRADOSMAX = 280;
-const int DPULSOSMAX = (float)DGRADOSMAX * (float)(ratio / 360) * 4.5;       //15000
-const int IPULSOSMAX = (float)IGRADOSMAX * (float)(ratio / 360) * 7.281125;  //22106
+const int DPULSOSMAX = round((float)DGRADOSMAX * (float)(ratio / 360) * 4.5);       //15000
+const int IPULSOSMAX = round((float)IGRADOSMAX * (float)(ratio / 360) * 7.281125);  //22106
 const int ZMMMAX = 270;
 const int ZPULSOSMAX = 270;
 
@@ -74,7 +72,8 @@ int rounds = 0;
 int limit;
 float alto;
 float prevalto;
-bool pinza;
+int pinza;
+bool initialized = false;
 
 // numero maximo de pasos/pulsos
 
@@ -92,8 +91,22 @@ Servo girar;
 Servo abrir;
 
 // homing functions
-float home(int motorpin1, int motorpin2, int finpin, int finpin2, int PWMpin, int posi, int DPULSOSMAX) {
-  analogWrite(PWMpin, 30);
+float homed(int motorpin1, int motorpin2, int finpin, int PWMpin, int posi, int DPULSOSMAX) {
+  analogWrite(PWMpin, 100);
+  posprev = posi;
+  while (digitalRead(finpin) == 0) {
+    digitalWrite(motorpin1, LOW);
+    digitalWrite(motorpin2, HIGH);
+  }
+  digitalWrite(motorpin1, LOW);
+  digitalWrite(motorpin2, LOW);
+
+  float delta = fabs(posprev - posi);
+  posi = -DPULSOSMAX / 2;
+}
+
+float homei(int motorpin1, int motorpin2, int finpin, int PWMpin, int posi, int DPULSOSMAX) {
+  analogWrite(PWMpin, 100);
   posprev = posi;
   while (digitalRead(finpin) == 0) {
     digitalWrite(motorpin1, HIGH);
@@ -103,19 +116,21 @@ float home(int motorpin1, int motorpin2, int finpin, int finpin2, int PWMpin, in
   digitalWrite(motorpin2, LOW);
 
   float delta = fabs(posprev - posi);
-  posi = -DPULSOSMAX / 2;
+  posi = -IPULSOSMAX / 2;
 }
 
 float homestepper(int dirpin, int steppin, int finpin) {
-  while (digitalRead(finpin) == 0) {
+  digitalWrite(SLEEP, HIGH);
+  delay(1000);
+  while (digitalRead(finpin) == 1) {
     digitalWrite(dirpin, LOW);
     digitalWrite(steppin, HIGH);
-    delayMicroseconds(500);
+    delayMicroseconds(3000);
     digitalWrite(steppin, LOW);
-    delayMicroseconds(500);
+    delayMicroseconds(3000);
   }
   digitalWrite(steppin, LOW);
-  digitalWrite(SLEEP, HIGH);
+  digitalWrite(SLEEP, LOW);
 
   alto = 0;
 }
@@ -157,21 +172,34 @@ void setup() {
   girar.attach(SERVO1);
   abrir.attach(SERVO2);
 
-  pinMode(FINII, INPUT_PULLUP);
-  pinMode(FINDI, INPUT_PULLUP);
-  pinMode(FINIE, INPUT_PULLUP);
-  pinMode(FINDE, INPUT_PULLUP);
-  pinMode(FINZB, INPUT_PULLUP);
-  pinMode(FINZA, INPUT_PULLUP);
+  pinMode(FINE, INPUT_PULLUP);
+  pinMode(FINI, INPUT_PULLUP);
+  pinMode(FINZ, INPUT_PULLUP);
 
-  // homing of all motors
-  home(DCD_1, DCD_2, FINII, FINDI, PWMD, posid, DPULSOSMAX);
-  home(DCI_1, DCI_2, FINIE, FINDE, PWMI, posii, IPULSOSMAX);
-  homestepper(DIR, STEP, FINZB);
+  digitalWrite(SLEEP, HIGH);
+  digitalWrite(SRESET, HIGH);
+  digitalWrite(ENAPIN, LOW);
+  digitalWrite(MS1, LOW);
+  digitalWrite(MS2, LOW);
+  digitalWrite(MS3, LOW);
+  digitalWrite(SERVO1, LOW);
+  digitalWrite(SERVO2, LOW);
+
+  initialized = false;
+
 }
 
 void loop() {
 
+  if (initialized == false)
+  {
+    homed(DCD_1, DCD_2, FINI, PWMD, posid, DPULSOSMAX); // derecho - interno
+    homei(DCI_1, DCI_2, FINE, PWMI, posii, IPULSOSMAX); // iz - ext.
+    homestepper(DIR, STEP, FINZ);
+    delay(5000);
+    Serial.println("INIT END");
+    initialized = true;
+  }
   // wait until serial available
   if (Serial.available()) {
     // opcode syntax (int dird, int diri, int gradd, int gradi, int alto, boolean pinza)
@@ -268,7 +296,7 @@ void loop() {
   eprevi = ei;
 }
 
-// replace opcode with sign 
+// replace opcode with sign
 int signCorrection(int dir, int grad) {
   if (dir == 0) {
     grad = -grad;
@@ -289,18 +317,20 @@ void setMotor(int dir, int pwmVal, int pwm, int pin1, int pin2) {
   } else {
     digitalWrite(pin1, LOW);
     digitalWrite(pin2, LOW);
-    if (pwm == PWMD) {
+    if ((int)pwm - (int)PWMD == 0) {
       dird = 0;
       pulsosd = 0;
+      Serial.println("Update derecha");
     } else {
       diri = 0;
       pulsosi = 0;
+      Serial.println("Update izquierda");
     }
   }
 }
 
 void setStepper(int steps) {
-  digitalWrite(SLEEP, 0);
+  digitalWrite(SLEEP, HIGH);
   delay(1);
   if (steps - prevalto > 0) {
     digitalWrite(DIR, HIGH);
@@ -309,19 +339,20 @@ void setStepper(int steps) {
   }
   for (int x = 0; x < steps; x++) {
     digitalWrite(STEP, HIGH);
-    delayMicroseconds(500);
+    delayMicroseconds(3000);
     digitalWrite(STEP, LOW);
-    delayMicroseconds(500);
+    delayMicroseconds(3000);
+    Serial.println("Stepperloop");
   }
   delay(500);
-  digitalWrite(SLEEP, 1);
+  digitalWrite(SLEEP, LOW);
   prevalto = steps;
 }
 
-void setPinza(int grad, bool open) {
+void setPinza(int grad, int abierto) {
   girar.write(grad);
-  if (open == 0) {
-    abrir.write(36);
+  if (abierto == 0) {
+    abrir.write(36); // pinza cerrada, open = abierta
   } else {
     abrir.write(0);
   }
