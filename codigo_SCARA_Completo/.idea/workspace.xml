@@ -10,7 +10,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="138c2c51-acfb-496b-be13-0f847267450a" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Encoder.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Encoder.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Fin.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Fin.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Giro.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Giro.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Motor.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Motor.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/PIDMotor.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/PIDMotor.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Pinout.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Pinza.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Pinza.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Scara.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Scara.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/codigo_scara_completo.ino" beforeDir="false" afterPath="$PROJECT_DIR$/codigo_scara_completo.ino" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/FlexyStepper/src/FlexyStepper.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/FlexyStepper/src/FlexyStepper.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,7 +44,9 @@
     <option name="stateVersion" value="1" />
   </component>
   <component name="ProjectId" id="2GeEOLhBzkbZBQyd6YKRyE8cv03" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -40,6 +59,11 @@
     <property name="cf.first.check.clang-format" value="false" />
     <property name="cidr.known.project.marker" value="true" />
     <property name="cmake.loaded.for.project" value="true" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\thano\Universidad Politécnica de Madrid\Equipo Robótica - GitHub\Robotica\codigo_SCARA_Completo" />
+    </key>
   </component>
   <component name="RunManager">
     <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
@@ -57,11 +81,22 @@
       <option name="presentableId" value="Default" />
       <updated>1666740615751</updated>
       <workItem from="1666740618391" duration="900000" />
-      <workItem from="1666982380515" duration="1155000" />
+      <workItem from="1666982380515" duration="13983000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>

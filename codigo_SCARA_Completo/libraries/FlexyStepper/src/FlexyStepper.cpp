@@ -192,7 +192,8 @@
 //
 
 #include "FlexyStepper.h"
-
+#include "Pinout.h"
+#include <arduino.h>
 
 //
 // direction signal level for "step and direction"
@@ -235,14 +236,20 @@ FlexyStepper::FlexyStepper()
 //          enablePinNumber = IO pin number for the enable bit (LOW is enabled)
 //            set to 0 if enable is not supported
 //
-void FlexyStepper::connectToPins(byte stepPinNumber, byte directionPinNumber)
+void FlexyStepper::connectToPins(int stepPinNumber, int directionPinNumber, int multi1, int multi2, int multi3, int sleep, int reset, int enable)
 {
   //
   // remember the pin numbers
   //
   stepPin = stepPinNumber;
   directionPin = directionPinNumber;
-  
+  multi1Pin = multi1;
+  multi2Pin = multi2;
+  multi3Pin = multi3;
+  sleepPin = sleep;
+  resetPin = reset;
+  enablePin = enable;
+
   //
   // configure the IO bits
   //
@@ -251,6 +258,20 @@ void FlexyStepper::connectToPins(byte stepPinNumber, byte directionPinNumber)
 
   pinMode(directionPin, OUTPUT);
   digitalWrite(directionPin, LOW);
+
+  pinMode(multi1Pin, OUTPUT);
+  pinMode(multi2Pin, OUTPUT);
+  pinMode(multi3Pin, OUTPUT);
+  pinMode(sleepPin, OUTPUT);
+  pinMode(resetPin, OUTPUT);
+  pinMode(enablePin, OUTPUT);
+
+  digitalWrite(multi1Pin, LOW);
+  digitalWrite(multi2Pin, LOW);
+  digitalWrite(multi3Pin, LOW);
+  digitalWrite(sleepPin, HIGH);
+  digitalWrite(resetPin, HIGH);
+  digitalWrite(enablePin, LOW);
 }
 
 
@@ -758,7 +779,7 @@ bool FlexyStepper::moveToHomeInSteps(long directionTowardHome,
     }
   }
   delay(25);
-  
+
   //
   // check if switch never detected
   //
@@ -769,7 +790,7 @@ bool FlexyStepper::moveToHomeInSteps(long directionTowardHome,
   //
   // successfully homed, set the current position to 0
   //
-  setCurrentPositionInSteps(0L);    
+  setCurrentPositionInSteps(0L);
 
   //
   // restore original velocity
