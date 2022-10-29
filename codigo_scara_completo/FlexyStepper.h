@@ -100,8 +100,14 @@ class FlexyStepper
     //
     // private member variables
     //
-    byte stepPin;
-    byte directionPin;
+    int stepPin;
+    int directionPin;
+    int multi1Pin;
+    int multi2Pin;
+    int multi3Pin;
+    int sleepPin;
+    int resetPin;
+    int enablePin;
     float stepsPerMillimeter;
     float stepsPerRevolution;
     int directionOfMotion;

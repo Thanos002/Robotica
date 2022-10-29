@@ -4,7 +4,7 @@
 
 #include "Fin.h"
 
-void Fin::init()
+void Fin::init(int mypin)
 {
     pinMode(mypin, INPUT);
 

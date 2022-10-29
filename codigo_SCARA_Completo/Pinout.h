@@ -8,6 +8,10 @@
 #ifndef CODIGO_SCARA_COMPLETO_PINOUT_H
 #define CODIGO_SCARA_COMPLETO_PINOUT_H
 
+#define D 1
+#define I 2
+#define Z 3
+
 //motor derecho
 #define DCD_1 22
 #define DCD_2 23
@@ -41,8 +45,8 @@
 #define PINZA 10  // servo abrir
 
 // pins de fin de carrera (p.e. FINDE fin de motor del extremo (izquierdo) a la posicion derecha)
-#define FINE 40
-#define FINI 44
+#define FINI 40 //fin del motor iqzierdo
+#define FIND 44
 #define FINZ 42
 
 

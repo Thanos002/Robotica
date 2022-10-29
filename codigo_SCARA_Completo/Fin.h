@@ -12,8 +12,8 @@ class Fin
 protected:
     int mypin;
 public:
-    void init();
-    Endstop(int pin) { mypin = pin; };
+    void init(int mypin);
+    Fin(int pin) { mypin = pin; };
     bool pressed();
 };
 

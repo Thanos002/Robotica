@@ -27,7 +27,7 @@ private:
     Encoder_p* myEncoder;
     PID* myPID;
 public:
-    Controlposicion(Motor*, Encoder_p*, float);
+    PIDMotor(Motor*, Encoder_p*, float);
     void setPosicionTics(int); //LLeva al motor a una posicion en tics;
     void setPosicionGrados(float); //Lleva al motor a una posicion en grados;
     void apagarMotor(); //deja libre el motor;

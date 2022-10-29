@@ -8,22 +8,24 @@
 #include "Motor.h"
 #include "Encoder.h"
 #include "PIDMotor.h"
-#include "Stepper.h"
+#include "FlexyStepper.h"
 #include "Fin.h"
 #include "Pinza.h"
+#include "Giro.h"
 #include <Arduino.h>
 
 class Scara
 {
 private:
     Fin* MyFin[2];
-    Controlposicion* MyControl[2];
+    PIDMotor* MyControl[2];
     Motor* MyMotor[2];
     Motor* Motor_A;
     Encoder_p* MyEncoder[1];
-    Stepper* miStepper;
+    FlexyStepper* MyStepper;
     //stepper
-    Pinza* miPinza;
+    Pinza* MyPinza;
+    Giro* MyGiro;
 
     bool pidStatus;
     bool homing; // variable que indica a logic que debe estar en homing
@@ -36,19 +38,21 @@ public:
 
     Motor& getMotor(int);
     Encoder_p& getEncoder(int);
-    Controlposicion& getControlposicion(int);
-    Stepper& getStepper();
+    PIDMotor& getControlposicion(int);
+    FlexyStepper& getStepper();
     Fin& getEndstop(int);
     Pinza& getPinza();
     Giro& getGiro();
 
-    void setPosicionArticulares(float, float, float, float, int, int);
-    void setPosicionArticulares_tics(int,int,int,float, int, int);
+    void setPosicionBrazos(float, float, float, float, int);
+    void setPosicionBrazos_pulsos(int,int,int,float, int);
 
     void goHome(); //Hace homing al robot
     void setFree();
     void setLock(); //apaga los motores
 
+    void SerialPrintPosicionTics();
+    void SerialPrintErrores();
     void RobotLogic(); //Maquina de estados del robot
 
 

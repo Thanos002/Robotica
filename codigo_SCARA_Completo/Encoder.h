@@ -6,9 +6,9 @@
 #define CODIGO_SCARA_COMPLETO_ENCODER_H
 
 #include <Arduino.h>
-#include <arm.h>
+//#include <arm.h>
 
-#include <SimplyAtomic.h>
+#include "SimplyAtomic.h"
 
 class Encoder_p
 {

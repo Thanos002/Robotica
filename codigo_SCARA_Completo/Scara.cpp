@@ -15,14 +15,14 @@ Scara::Scara()
     MyMotor[I] = new Motor(DCI_1, DCI_2, PWMI);
 
     MyEncoder[D] = new Encoder_p(ENCDA, ENCDB, FACTOR);
-    MyEncoder[I] = new Encoder_p(ENCA, ENCB, FACTOR);
+    MyEncoder[I] = new Encoder_p(ENCIA, ENCIB, FACTOR);
 
-    MyFin[D] = new Fin(FINE);
+    MyFin[D] = new Fin(FIND);
     MyFin[I] = new Fin(FINI);
     MyFin[Z] = new Fin(FINZ);
 
-    MyControl[D] = new PIDMotor(MyMotor[D], MyEncoder[D], TICS_D);
-    MyControl[I] = new PIDMotor(MyMotor[I], MyEncoder[I], TICS_I);
+    MyControl[D] = new PIDMotor(MyMotor[D], MyEncoder[D], RATIO);
+    MyControl[I] = new PIDMotor(MyMotor[I], MyEncoder[I], RATIO);
 
     MyStepper = new FlexyStepper();
     MyPinza = new Pinza();
@@ -32,7 +32,9 @@ Scara::Scara()
     homing = false;
     setfree = false;
     setlock = false;
-    this->setPosicionBrazos(0,0,0,0);
+    this->setPosicionBrazos(0,0,0,0,0);
+
+    Serial.println("Constr done");
 }
 
 void Scara::init()
@@ -43,34 +45,33 @@ void Scara::init()
     MyEncoder[D]->init();
     MyEncoder[I]->init();
 
-    MyFin[D]->init();
-    MyFin[I]->init();
-    MyFin[Z]->init();
+    MyFin[D]->init(FIND);
+    MyFin[I]->init(FINI);
+    MyFin[Z]->init(FINZ);
 
-    MyControl[D]->init();
-    MyControl[I]->init();
-
-    FlexyStepper->connectToPins(STEP, DIR,  MS1, MS2, MS3, SLEEP, SRESET, ENAPIN);
+    MyStepper->connectToPins(STEP, DIR,  MS1, MS2, MS3, SLEEP, SRESET, ENAPIN);
     MyPinza->init(PINZA);
     MyGiro->init(GIRO);
+
+    Serial.print("Scara init");
 }
 
 Motor& Scara::getMotor(int which)
 {
-    return *misMotores[which];
+    return *MyMotor[which];
 }
 
 Encoder_p& Scara::getEncoder(int which)
 {
-    return *misEncoders[which];
+    return *MyEncoder[which];
 }
 
-Controlposicion& Scara::getControlposicion(int which)
+PIDMotor& Scara::getControlposicion(int which)
 {
-    return *misControles[which];
+    return *MyControl[which];
 }
 
-Stepper& Scara::getStepper()
+FlexyStepper& Scara::getStepper()
 {
     return *MyStepper;
 }
@@ -80,12 +81,17 @@ Pinza& Scara::getPinza()
     return *MyPinza;
 }
 
+Giro& Scara::getGiro()
+{
+    return *MyGiro;
+}
+
 void Scara::setPosicionBrazos(float gradosD, float gradosI, float mmstepper, float giro, int pinza)
 {
 
-    misControles[D]->setPosicionGrados(gradosD);
+    MyControl[D]->setPosicionGrados(gradosD);
     delay(400);
-    misControles[I]->setPosicionGrados(gradosI);
+    MyControl[I]->setPosicionGrados(gradosI);
     delay(400);
 
     pidStatus = true;
@@ -93,29 +99,31 @@ void Scara::setPosicionBrazos(float gradosD, float gradosI, float mmstepper, flo
     homing = false;
     setlock = false;
 
-    myStepper->moveToPositionInMillimeters(mmstepper);
-    myGiro->move(giro);
-    if(myPinza->getStado!=pinza){
-        myPinza->move();
+    MyStepper->moveToPositionInMillimeters(mmstepper);
+    MyGiro->move(giro);
+    if(MyPinza->getStado()!=pinza){
+        MyPinza->move();
     }
 }
 
-void Scara::setPosicionBrazos_pulsos(int ticsA, int ticsB, float setps)
+void Scara::setPosicionBrazos_pulsos(int ticsA, int ticsB, int steps, float giro, int pinza)
 {
-    misControles[A]->getPID().SetOutputLimits(-155,155);
-    misControles[B]->getPID().SetOutputLimits(-155,155);
-    misControles[C]->getPID().SetOutputLimits(-155,155);
+    MyControl[D]->getPID().SetOutputLimits(-155,155);
+    MyControl[I]->getPID().SetOutputLimits(-155,155);
 
-    misControles[A]->setPosicionTics(ticsA);
+    MyControl[D]->setPosicionTics(ticsA);
     delay(400);
-    misControles[B]->setPosicionTics(ticsB);
+    MyControl[I]->setPosicionTics(ticsB);
     delay(400);
-    misControles[C]->setPosicionTics(ticsC);
     pidStatus = true;
     setfree = false;
     homing = false;
     setlock = false;
-    miStepper->moveToPositionInMillimeters(mmstepper);
+    MyStepper->moveToPositionInSteps(steps);
+    MyGiro->move(giro);
+    if(MyPinza->getStado()!=pinza){
+        MyPinza->move();
+    }
 }
 
 void Scara::RobotLogic()
@@ -124,7 +132,7 @@ void Scara::RobotLogic()
     {
         MyControl[D]->control_logic();
         MyControl[I]->control_logic();
-    };
+    }
 
     if(homing == true)
     {
@@ -141,10 +149,25 @@ void Scara::RobotLogic()
         this->setLock();
     }
 
-    if((MyFin[D]->pressed() && (MyFin[I]->pressed())))) digitalWrite(LED_BUILTIN, HIGH);
+    if((MyFin[D]->pressed() && (MyFin[I]->pressed()))){
+      digitalWrite(LED_BUILTIN, HIGH);}
     else digitalWrite(LED_BUILTIN, 0x0);
 
     MyStepper->moveToPositionInMillimeters(0);
     MyPinza->move();
     
+}
+
+void Scara::SerialPrintPosicionTics()
+{
+    Serial.println(MyEncoder[D]->getTics());  
+    Serial.println(MyEncoder[I]->getTics());
+    Serial.println(MyEncoder[Z]->getTics()); 
+}
+
+void Scara::SerialPrintErrores()
+{
+    Serial.println(MyControl[D]->getError());
+    Serial.println(MyControl[I]->getError());
+    Serial.println(MyControl[Z]->getError());
 }

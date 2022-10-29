@@ -5,7 +5,7 @@
 #ifndef CODIGO_SCARA_COMPLETO_GIRO_H
 #define CODIGO_SCARA_COMPLETO_GIRO_H
 
-#include "Servo.h"
+#include <Servo.h>
 
 class Giro {
 
@@ -15,7 +15,7 @@ public:
 
 
     Giro();
-    void move();
+    void move(int);
     int getAngle();
     void init(int);
 
