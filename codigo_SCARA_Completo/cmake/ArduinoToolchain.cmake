@@ -58,8 +58,10 @@ if(NOT ARDUINO_SDK_PATH)
             /opt/arduino*
             /usr/local/share/arduino*)
     elseif(WIN32)
-        set(SDK_PATH_HINTS "C:\\Program Files\\Arduino"
-            "C:\\Program Files (x86)\\Arduino"
+        set(SDK_PATH_HINTS "C:\\Program Files\\Arduino IDE"
+            "C:\\Program Files (x86)\\Arduino IDE"
+                "C:\\Users\\thano\\AppData\\Local\\Programs"
+                "C:\\Users\\thano\\AppData\\Local\\Programs\\Arduino IDE"
             )
     endif()
     list(SORT SDK_PATH_HINTS)

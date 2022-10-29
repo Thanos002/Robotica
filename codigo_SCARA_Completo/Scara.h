@@ -9,18 +9,18 @@
 #include "Encoder.h"
 #include "PIDMotor.h"
 #include "Stepper.h"
-#include "Endstop.h"
+#include "Fin.h"
 #include "Pinza.h"
 #include <Arduino.h>
 
-class Pullup
+class Scara
 {
 private:
-    Endstop* misEndstops[4];
-    Controlposicion* misControles[3];
-    Motor* misMotores[3];
+    Fin* MyFin[2];
+    Controlposicion* MyControl[2];
+    Motor* MyMotor[2];
     Motor* Motor_A;
-    Encoder_p* misEncoders[3];
+    Encoder_p* MyEncoder[1];
     Stepper* miStepper;
     //stepper
     Pinza* miPinza;

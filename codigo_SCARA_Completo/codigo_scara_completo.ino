@@ -1,9 +1,9 @@
 #include <Arduino.h>
 #include <SimplyAtomic.h>
-#include <util/atomic.h>  // For the ATOMIC_BLOCK macro
+//#include <util/atomic.h>  // For the ATOMIC_BLOCK macro
 #include <arm.h>
-#include <PID_v1.h>
-#include <Scara.h>
+#include "PID_v1.h"
+#include "Scara.h"
 
 Scara myScara;
 

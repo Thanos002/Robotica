@@ -64,6 +64,8 @@
 #define GRADOS_MAX_I 280
 #define ZMAX 270
 
+#define FACTOR 1579
+
 #define GRADOS_POR_TIC 4.3861
 #define GRADOS_A_PULSOS(x) (x)*4.3861
 #define PULSOS_A_GRADOS(x) (x)*4.3861

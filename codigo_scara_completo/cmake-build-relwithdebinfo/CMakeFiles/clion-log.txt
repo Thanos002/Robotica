@@ -1,4 +1,4 @@
-"C:\Program Files\JetBrains\CLion 2021.3.3\bin\cmake\win\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - MinGW Makefiles" "C:\Users\thano\Universidad Politécnica de Madrid\Equipo Robótica - GitHub\Robotica\codigo_SCARA_Completo"
+"C:\Program Files\JetBrains\CLion 2021.3.3\bin\cmake\win\bin\cmake.exe" -DCMAKE_BUILD_TYPE=RelWithDebInfo -G "CodeBlocks - MinGW Makefiles" "C:\Users\thano\Universidad Politécnica de Madrid\Equipo Robótica - GitHub\Robotica\codigo_SCARA_Completo"
 CMake Deprecation Warning at CMakeLists.txt:1 (cmake_minimum_required):
   Compatibility with CMake < 2.8.12 will be removed from a future version of
   CMake.

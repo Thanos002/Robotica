@@ -7,27 +7,26 @@
 #include "FlexyStepper.h"
 #include "Pinza.h"
 #include "Giro.h"
-#include <PID_v1.h>
+#include "PID_v1.h"
 
 Scara::Scara()
 {
-    MyMotor[D] = new Motor(PIN_MOTORA_IN1, PIN_MOTORA_IN2, PIN_MOTORA_PWM);
-    MyMotor[I] = new Motor(PIN_MOTORB_IN1, PIN_MOTORB_IN2, PIN_MOTORB_PWM);
-    MyMotor[Z] = new Motor(PIN_MOTORC_IN1, PIN_MOTORC_IN2, PIN_MOTORC_PWM);
+    MyMotor[D] = new Motor(DCD_1, DCD_2, PWMD);
+    MyMotor[I] = new Motor(DCI_1, DCI_2, PWMI);
 
-    MyEncoder[D] = new Encoder_p(PIN_MOTORA_CANALA, PIN_MOTORA_CANALB, TICS_A);
-    MyEncoder[I] = new Encoder_p(PIN_MOTORB_CANALA, PIN_MOTORB_CANALB, TICS_B);
+    MyEncoder[D] = new Encoder_p(ENCDA, ENCDB, FACTOR);
+    MyEncoder[I] = new Encoder_p(ENCA, ENCB, FACTOR);
 
-    MyFin[D] = new Endstop(PIN_ENDSTOPA);
-    MyFin[I] = new Endstop(PIN_ENDSTOPB);
-    MyFin[Z] = new Endstop(PIN_ENDSTOPC);
+    MyFin[D] = new Fin(FINE);
+    MyFin[I] = new Fin(FINI);
+    MyFin[Z] = new Fin(FINZ);
 
     MyControl[D] = new PIDMotor(MyMotor[D], MyEncoder[D], TICS_D);
     MyControl[I] = new PIDMotor(MyMotor[I], MyEncoder[I], TICS_I);
 
-    MyStepper = new FlexyStepper(PIN_STEP,PIN_DIR,RESET,SLEEP);
-    MyPinza = new Pinza(PINZA);
-    MyGiro = new Giro(GIRO);
+    MyStepper = new FlexyStepper();
+    MyPinza = new Pinza();
+    MyGiro = new Giro();
 
     pidStatus =true;
     homing = false;

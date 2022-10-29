@@ -1,0 +1,56 @@
+"C:\Program Files\JetBrains\CLion 2021.3.3\bin\cmake\win\bin\cmake.exe" -G "CodeBlocks - MinGW Makefiles" "C:\Users\thano\Universidad Politécnica de Madrid\Equipo Robótica - GitHub\Robotica\codigo_SCARA_Completo"
+CMake Deprecation Warning at CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 2.8.12 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value or use a ...<max> suffix to tell
+  CMake that the project does not need compatibility with older versions.
+
+
+-- The C compiler identification is unknown
+-- The CXX compiler identification is unknown
+CMake Deprecation Warning at cmake/Platform/Arduino.cmake:285 (cmake_minimum_required):
+  Compatibility with CMake < 2.8.12 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value or use a ...<max> suffix to tell
+  CMake that the project does not need compatibility with older versions.
+Call Stack (most recent call first):
+  C:/Program Files/JetBrains/CLion 2021.3.3/bin/cmake/win/share/cmake-3.21/Modules/CMakeSystemSpecificInformation.cmake:27 (include)
+  CMakeLists.txt:8 (project)
+
+
+CMake Error at cmake/Platform/Arduino.cmake:2290 (message):
+  Unsupported Arduino SDK (require version 0.19 or higher)
+Call Stack (most recent call first):
+  C:/Program Files/JetBrains/CLion 2021.3.3/bin/cmake/win/share/cmake-3.21/Modules/CMakeSystemSpecificInformation.cmake:27 (include)
+  CMakeLists.txt:8 (project)
+
+
+CMake Error at CMakeLists.txt:8 (project):
+  The CMAKE_C_COMPILER:
+
+    avr-gcc
+
+  is not a full path and was not found in the PATH.
+
+  Tell CMake where to find the compiler by setting either the environment
+  variable "CC" or the CMake cache entry CMAKE_C_COMPILER to the full path to
+  the compiler, or to the compiler name if it is in the PATH.
+
+
+CMake Error at CMakeLists.txt:8 (project):
+  The CMAKE_CXX_COMPILER:
+
+    avr-g++
+
+  is not a full path and was not found in the PATH.
+
+  Tell CMake where to find the compiler by setting either the environment
+  variable "CXX" or the CMake cache entry CMAKE_CXX_COMPILER to the full path
+  to the compiler, or to the compiler name if it is in the PATH.
+
+
+-- Configuring incomplete, errors occurred!
+See also "C:/Users/thano/Universidad Politécnica de Madrid/Equipo Robótica - GitHub/Robotica/codigo_scara_completo/cmake-build-arduino/CMakeFiles/CMakeOutput.log".
+See also "C:/Users/thano/Universidad Politécnica de Madrid/Equipo Robótica - GitHub/Robotica/codigo_scara_completo/cmake-build-arduino/CMakeFiles/CMakeError.log".

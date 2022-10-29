@@ -48,7 +48,7 @@ class FlexyStepper
     // public functions
     //
     FlexyStepper();
-    void connectToPins(byte stepPinNumber, byte directionPinNumber);
+    void connectToPins(int stepPinNumber, int directionPinNumber, int multi1, int multi2, int multi3, int sleep, int reset, int enable);
 
     void setStepsPerMillimeter(float motorStepPerMillimeter);
     float getCurrentPositionInMillimeters();
