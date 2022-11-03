@@ -4,7 +4,7 @@
 
 #include "Pinza.h"
 #include "Pinout.h"
-#include <arduino.h>
+#include <Arduino.h>
 #include <Servo.h>
 
 Pinza::Pinza() {

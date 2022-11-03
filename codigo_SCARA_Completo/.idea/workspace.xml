@@ -13,7 +13,10 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="138c2c51-acfb-496b-be13-0f847267450a" name="Changes" comment="" />
+    <list default="true" id="138c2c51-acfb-496b-be13-0f847267450a" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/codigo_scara_completo.ino" beforeDir="false" afterPath="$PROJECT_DIR$/codigo_scara_completo.ino" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -51,13 +54,6 @@
       <recent name="C:\Users\thano\Universidad Politécnica de Madrid\Equipo Robótica - GitHub\Robotica\codigo_SCARA_Completo" />
     </key>
   </component>
-  <component name="RunManager">
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -70,6 +66,7 @@
       <workItem from="1666982380515" duration="14257000" />
       <workItem from="1666999871099" duration="2021000" />
       <workItem from="1667002200100" duration="70000" />
+      <workItem from="1667048180035" duration="1418000" />
     </task>
     <servers />
   </component>

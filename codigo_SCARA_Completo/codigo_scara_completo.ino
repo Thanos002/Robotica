@@ -1,8 +1,8 @@
-#include <Arduino.h>
 //#include <SimplyAtomic.h>
 //#include <util/atomic.h>  // For the ATOMIC_BLOCK macro
 //#include <arm.h>
-#include "PID_v1.h"
+//#include "PID_v1.h"
+
 #include "Scara.h"
 #include "Pinout.h"
 
@@ -15,11 +15,25 @@ void handler_encoderI() {
   myScara.getEncoder(I).actualizar_posicion();
 }
 
+void timer_handler()
+{
+  myScara.RobotLogic();
+}
+
 void setup() {
   Serial.begin(9600);
   Serial.println("m");
+
+
   myScara.init();
 
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(1000);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(1000);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(1000);
+  digitalWrite(LED_BUILTIN, LOW);
 
   attachInterrupt(digitalPinToInterrupt(ENCDA), handler_encoderD, CHANGE);
   attachInterrupt(digitalPinToInterrupt(ENCIA), handler_encoderI, CHANGE);
@@ -33,7 +47,7 @@ void setup() {
 float gradd, gradi, alto, pinza, pulsosd, pulsosi, giro;
 
 void loop() {
-
+  Serial.println("Waiting...");
   // wait until serial available
   if (Serial.available()) {
     // opcode syntax (int dird, int diri, int gradd, int gradi, int alto, , int giro, int pinza)

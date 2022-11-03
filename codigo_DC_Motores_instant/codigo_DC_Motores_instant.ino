@@ -1,3 +1,5 @@
+#include <FlexyStepper.h>
+
 #include <util/atomic.h>  // For the ATOMIC_BLOCK macro
 #include <Servo.h>
 
@@ -12,10 +14,10 @@
 #define DCI_2 52
 
 // encoder pins (p.e. ENCDA - encoder del motor derecho pin A)
-#define ENCDA 49
-#define ENCDB 48
-#define ENCIA 51
-#define ENCIB 50
+#define ENCDA 18
+#define ENCDB 19
+#define ENCIA 20
+#define ENCIB 21
 
 // pins del stepper motor
 #define STEP 25
@@ -55,14 +57,18 @@ int diri;
 int gradi;
 int pulsosd = 0;
 int pulsosi = 0;
-const int ratio = 6316;  //1579*4
+const float ratio = 1579;  //1579*4
 int iterations = 0;
 
 // numero de pulsos/grados maximos
 const int DGRADOSMAX = 190;
 const int IGRADOSMAX = 280;
-const int DPULSOSMAX = round((float)DGRADOSMAX * (float)(ratio / 360) * 4.5);       //15000
-const int IPULSOSMAX = round((float)IGRADOSMAX * (float)(ratio / 360) * 7.281125);  //22106
+const int DPULSOSMAX = round((float)DGRADOSMAX * (float)(ratio / 360.0) * 3.5);       //15,3513
+#define DGRAD2PULSOS 15.3513
+#define IGRAD2PULSOS 24.1236
+#define DPULSOS2GRAD 1/DGRAD2PULSOS
+#define IPULSOS2GRAD 1/IGRAD2PULSOS
+const int IPULSOSMAX = round((float)IGRADOSMAX * (float)(ratio / 360.0) * 5.5);  // 24,1236
 const int ZMMMAX = 270;
 const int ZPULSOSMAX = 270;
 
@@ -74,6 +80,7 @@ float alto;
 float prevalto;
 int pinza;
 bool initialized = false;
+bool communicating = false;
 
 // numero maximo de pasos/pulsos
 
@@ -90,50 +97,8 @@ int giro;
 Servo girar;
 Servo abrir;
 
-// homing functions
-float homed(int motorpin1, int motorpin2, int finpin, int PWMpin, int posi, int DPULSOSMAX) {
-  analogWrite(PWMpin, 100);
-  posprev = posi;
-  while (digitalRead(finpin) == 0) {
-    digitalWrite(motorpin1, LOW);
-    digitalWrite(motorpin2, HIGH);
-  }
-  digitalWrite(motorpin1, LOW);
-  digitalWrite(motorpin2, LOW);
+FlexyStepper stepper;
 
-  float delta = fabs(posprev - posi);
-  posi = -DPULSOSMAX / 2;
-}
-
-float homei(int motorpin1, int motorpin2, int finpin, int PWMpin, int posi, int DPULSOSMAX) {
-  analogWrite(PWMpin, 100);
-  posprev = posi;
-  while (digitalRead(finpin) == 0) {
-    digitalWrite(motorpin1, HIGH);
-    digitalWrite(motorpin2, LOW);
-  }
-  digitalWrite(motorpin1, LOW);
-  digitalWrite(motorpin2, LOW);
-
-  float delta = fabs(posprev - posi);
-  posi = -IPULSOSMAX / 2;
-}
-
-float homestepper(int dirpin, int steppin, int finpin) {
-  digitalWrite(SLEEP, HIGH);
-  delay(1000);
-  while (digitalRead(finpin) == 1) {
-    digitalWrite(dirpin, LOW);
-    digitalWrite(steppin, HIGH);
-    delayMicroseconds(3000);
-    digitalWrite(steppin, LOW);
-    delayMicroseconds(3000);
-  }
-  digitalWrite(steppin, LOW);
-  digitalWrite(SLEEP, LOW);
-
-  alto = 0;
-}
 
 // BEGIN OF SETUP
 
@@ -143,15 +108,8 @@ void setup() {
   pinMode(ENCDB, INPUT);
   pinMode(ENCDA, INPUT);
   pinMode(ENCDB, INPUT);
-  attachInterrupt(digitalPinToInterrupt(ENCDA), readEncoderDAF, FALLING);
-  attachInterrupt(digitalPinToInterrupt(ENCIA), readEncoderIAF, FALLING);
-  attachInterrupt(digitalPinToInterrupt(ENCDB), readEncoderDBR, RISING);
-  attachInterrupt(digitalPinToInterrupt(ENCIB), readEncoderIBR, RISING);
-
-  attachInterrupt(digitalPinToInterrupt(ENCDA), readEncoderDAR, RISING);
-  attachInterrupt(digitalPinToInterrupt(ENCIA), readEncoderIAR, RISING);
-  attachInterrupt(digitalPinToInterrupt(ENCDB), readEncoderDBF, FALLING);
-  attachInterrupt(digitalPinToInterrupt(ENCIB), readEncoderIBF, FALLING);
+  attachInterrupt(digitalPinToInterrupt(ENCDA), handler_encoderD, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ENCIA), handler_encoderI, CHANGE);
 
   pinMode(PWMD, OUTPUT);
   pinMode(PWMI, OUTPUT);
@@ -171,6 +129,7 @@ void setup() {
 
   girar.attach(SERVO1);
   abrir.attach(SERVO2);
+  setPinza(20,30);
 
   pinMode(FINE, INPUT_PULLUP);
   pinMode(FINI, INPUT_PULLUP);
@@ -185,42 +144,40 @@ void setup() {
   digitalWrite(SERVO1, LOW);
   digitalWrite(SERVO2, LOW);
 
+  stepper.connectToPins(STEP, DIR);
+  stepper.setStepsPerRevolution(200);
+  stepper.setStepsPerMillimeter(25);
+  stepper.setSpeedInStepsPerSecond(400);
+  stepper.setAccelerationInStepsPerSecondPerSecond(200);
+  stepper.setSpeedInStepsPerSecond(600);
+  stepper.setAccelerationInStepsPerSecondPerSecond(200);
+
   initialized = false;
 
 }
 
 void loop() {
 
-  if (initialized == false)
-  {
-    homed(DCD_1, DCD_2, FINI, PWMD, posid, DPULSOSMAX); // derecho - interno
-    homei(DCI_1, DCI_2, FINE, PWMI, posii, IPULSOSMAX); // iz - ext.
-    homestepper(DIR, STEP, FINZ);
-    delay(5000);
-    Serial.println("INIT END");
-    initialized = true;
-  }
   // wait until serial available
   if (Serial.available()) {
+    communicating = true;
     // opcode syntax (int dird, int diri, int gradd, int gradi, int alto, boolean pinza)
-    dird = (int)Serial.readStringUntil(',').toInt();
-    diri = (int)Serial.readStringUntil(',').toInt();
     gradd = (int)Serial.readStringUntil(',').toInt();
     gradi = (int)Serial.readStringUntil(',').toInt();
-    alto = (int)Serial.readStringUntil(',').toInt();
+    alto = (float)Serial.readStringUntil(',').toInt();
     giro = (int)Serial.readStringUntil(',').toInt();
     pinza = (int)Serial.readStringUntil('\n').toInt();
-    pulsosd = Dgrados2pulsos(signCorrection(dird, gradd));
-    pulsosi = Igrados2pulsos(signCorrection(diri, gradi));
+    pulsosd = Dgrados2pulsos(gradd);
+    pulsosi = Igrados2pulsos(gradi);
 
-    setStepper(alto);
+    stepper.moveToPositionInMillimeters(-alto);
     setPinza(giro, pinza);
   }
 
   // PID constants
-  float kp = 4.5;
-  float kd = 0.3;
-  float ki = 0.2;
+  float kp = 5;
+  float kd = 0.1;
+  float ki = 0.1;
 
   // time difference
   long currT = micros();
@@ -229,43 +186,43 @@ void loop() {
 
   // Read the position in an atomic block to avoid a potential
   // misread if the interrupt coincides with this code running
-  int posd_atomic = 0;
-  int posi_atomic = 0;
+  int pos_d = 0;
+  int pos_i = 0;
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-    posd_atomic = posid;
-    posi_atomic = posii;
+    pos_d = posid;
+    pos_i = posii;
   }
-  if (iterations % 200 == 0) {
+  if ((iterations % 200 == 0)) {
     Serial.print(1);
     Serial.print(",");
     Serial.print(millis());
     Serial.print(",");
-    Serial.print(pulsosd);
+    Serial.print((int)(pulsosd*DPULSOS2GRAD));
     Serial.print(",");
-    Serial.println(posid);
+    Serial.println((int)(pos_d*DPULSOS2GRAD));
 
     Serial.print(2);
     Serial.print(",");
     Serial.print(millis());
     Serial.print(",");
-    Serial.print(pulsosi);
+    Serial.print((int)(pulsosi*IPULSOS2GRAD));
     Serial.print(",");
-    Serial.println(posii);
+    Serial.println((int)(pos_i*IPULSOS2GRAD));
 
     Serial.print(3);
     Serial.print(",");
     Serial.print(millis());
     Serial.print(",");
-    Serial.print(alto);
+    Serial.print((int)alto);
     Serial.print(",");
-    Serial.println(alto);
+    Serial.println((int)alto);
   }
   iterations = iterations + 1;
 
   // error
 
-  float ed = posid - pulsosd;
-  float ei = posii - pulsosi;
+  float ed = pos_d - pulsosd;
+  float ei = pos_i - pulsosi;
 
   // derivative
   float dedtd = (ed - eprevd) / (deltaT);
@@ -285,7 +242,7 @@ void loop() {
 
   // motor direction
   int dird = setDir(dird, ud);
-  int diri = setDir(diri, ud);
+  int diri = setDir(diri, ui);
 
   // signal the motor
   setMotor(dird, pwrd, PWMD, DCD_1, DCD_2);
@@ -320,48 +277,23 @@ void setMotor(int dir, int pwmVal, int pwm, int pin1, int pin2) {
     if ((int)pwm - (int)PWMD == 0) {
       dird = 0;
       pulsosd = 0;
-      Serial.println("Update derecha");
     } else {
       diri = 0;
       pulsosi = 0;
-      Serial.println("Update izquierda");
     }
   }
 }
 
-void setStepper(int steps) {
-  digitalWrite(SLEEP, HIGH);
-  delay(1);
-  if (steps - prevalto > 0) {
-    digitalWrite(DIR, HIGH);
-  } else {
-    digitalWrite(DIR, LOW);
-  }
-  for (int x = 0; x < steps; x++) {
-    digitalWrite(STEP, HIGH);
-    delayMicroseconds(3000);
-    digitalWrite(STEP, LOW);
-    delayMicroseconds(3000);
-    Serial.println("Stepperloop");
-  }
-  delay(500);
-  digitalWrite(SLEEP, LOW);
-  prevalto = steps;
-}
-
 void setPinza(int grad, int abierto) {
+  grad = map(grad, 0, 90, 20, 90) ;
   girar.write(grad);
-  if (abierto == 0) {
-    abrir.write(36); // pinza cerrada, open = abierta
-  } else {
-    abrir.write(0);
-  }
+  abrir.write(abierto == 0 ? 30 : 90);
 }
 
 float setPower(float u) {
   float pwr = fabs(u);
-  if (pwr > 255) {
-    pwr = 255;
+  if (pwr > 200) {
+    pwr = 200;
   }
   return pwr;
 }
@@ -375,82 +307,29 @@ int setDir(int dir, float u) {
   return dir;
 }
 
-void readEncoderDAF() {  //when A Falling or B Rising, pass posi var and opposite enc
-  int b = digitalRead(ENCDB);
-  if (b > 0) {  //determine whether A or B interrupted first -> direction
-    posid++;
-  } else {
-    posid--;
+void handler_encoderD() {
+  if (digitalRead(ENCDA) == HIGH) {
+    if (digitalRead(ENCDB) == LOW)
+      posid++;
+    else
+      posid--;
   }
-}
 
-void readEncoderIAF() {  //when A Falling or B Rising, pass posi var and opposite enc
-  int b = digitalRead(ENCIB);
-  if (b > 0) {  //determine whether A or B interrupted first -> direction
-    posii++;
-  } else {
-    posii--;
-  }
 }
-
-void readEncoderDBR() {  //when A Falling or B Rising, pass posi var and opposite enc
-  int b = digitalRead(ENCDA);
-  if (b > 0) {  //determine whether A or B interrupted first -> direction
-    posid++;
-  } else {
-    posid--;
+void handler_encoderI() {
+  if (digitalRead(ENCIA) == HIGH) {
+    if (digitalRead(ENCIB) == LOW)
+      posii++;
+    else
+      posii--;
   }
-}
 
-void readEncoderIBR() {  //when A Falling or B Rising, pass posi var and opposite enc
-  int b = digitalRead(ENCIA);
-  if (b > 0) {  //determine whether A or B interrupted first -> direction
-    posii++;
-  } else {
-    posii--;
-  }
-}
-
-void readEncoderDAR() {  //when A Rising or B Falling
-  int b = digitalRead(ENCDB);
-  if (b > 0) {  //determine whether A or B interrupted first -> direction
-    posid--;
-  } else {
-    posid++;
-  }
-}
-
-void readEncoderIAR() {  //when A Rising or B Falling
-  int b = digitalRead(ENCIB);
-  if (b > 0) {  //determine whether A or B interrupted first -> direction
-    posii--;
-  } else {
-    posii++;
-  }
-}
-
-void readEncoderDBF() {  //when A Rising or B Falling
-  int b = digitalRead(ENCDA);
-  if (b > 0) {  //determine whether A or B interrupted first -> direction
-    posid--;
-  } else {
-    posid++;
-  }
-}
-
-void readEncoderIBF() {  //when A Rising or B Falling
-  int b = digitalRead(ENCIA);
-  if (b > 0) {  //determine whether A or B interrupted first -> direction
-    posii--;
-  } else {
-    posii++;
-  }
 }
 
 // conversion de grados a pulsos del motor derecho /brazo interno
 // comprobar si el punto esta dentro el campo de trabajo
 float Dgrados2pulsos(float grados) {
-  float result = (float)grados * (float)(ratio / 360) * 4.5;
+  float result = (float)grados * (float)(ratio / 360.0) * 3.5;
   if ((result < DPULSOSMAX / 2 - posid) && (result > posid - DPULSOSMAX / 2)) {
     return result;
   } else {
@@ -467,7 +346,7 @@ float Dgrados2pulsos(float grados) {
 
 // lo igual, para el motor izquierdo
 float Igrados2pulsos(float grados) {
-  float result = (float)grados * (float)(ratio / 360) * 7.281125;
+  float result = (float)grados * (float)(ratio / 360.0) * 5.5;
   if ((result < IPULSOSMAX / 2 - posii) && (result > posii - IPULSOSMAX / 2)) {
     return result;
   } else {
