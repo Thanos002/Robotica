@@ -37,7 +37,7 @@
 #define SERVO1 9   // servo girar
 #define SERVO2 10  // servo abrir
 
-// pins de fin de carrera (p.e. FINDE fin de motor del extremo (izquierdo) a la posicion derecha)
+// pins de fin de carrera
 #define FINE 40
 #define FINI 44
 #define FINZ 42
@@ -63,12 +63,12 @@ int iterations = 0;
 // numero de pulsos/grados maximos
 const int DGRADOSMAX = 190;
 const int IGRADOSMAX = 280;
-const int DPULSOSMAX = round((float)DGRADOSMAX * (float)(ratio / 360.0) * 3.5);       //15,3513
-#define DGRAD2PULSOS 15.3513
-#define IGRAD2PULSOS 24.1236
+#define DGRAD2PULSOS 19.7375 // 1579/360*4.5
+#define IGRAD2PULSOS 31.9322  //1579/360*7.2803
 #define DPULSOS2GRAD 1/DGRAD2PULSOS
 #define IPULSOS2GRAD 1/IGRAD2PULSOS
-const int IPULSOSMAX = round((float)IGRADOSMAX * (float)(ratio / 360.0) * 5.5);  // 24,1236
+const int DPULSOSMAX = (int)((float)DGRADOSMAX*(float)DGRAD2PULSOS);
+const int IPULSOSMAX = (int)((float)IGRADOSMAX * (float)IGRAD2PULSOS);
 const int ZMMMAX = 270;
 const int ZPULSOSMAX = 270;
 
@@ -290,7 +290,7 @@ void setPinza(int grad, int abierto) {
   abrir.write(abierto == 0 ? 30 : 90);
 }
 
-float setPower(float u) {
+float setPower(float u) { // anti windup and speed limit
   float pwr = fabs(u);
   if (pwr > 200) {
     pwr = 200;
@@ -298,6 +298,7 @@ float setPower(float u) {
   return pwr;
 }
 
+// To-do: avoid pwr under 10, as motor might not be moving (set min speed and error acceptance level)
 
 int setDir(int dir, float u) {
   dir = 1;
@@ -329,7 +330,7 @@ void handler_encoderI() {
 // conversion de grados a pulsos del motor derecho /brazo interno
 // comprobar si el punto esta dentro el campo de trabajo
 float Dgrados2pulsos(float grados) {
-  float result = (float)grados * (float)(ratio / 360.0) * 3.5;
+  float result = (float)grados * (float)DGRAD2PULSOS;
   if ((result < DPULSOSMAX / 2 - posid) && (result > posid - DPULSOSMAX / 2)) {
     return result;
   } else {
@@ -340,13 +341,13 @@ float Dgrados2pulsos(float grados) {
     Serial.print(result);
     Serial.print(",");
     Serial.println(posid);
-    return 0;
+    return posid;
   }
 }
 
 // lo igual, para el motor izquierdo
 float Igrados2pulsos(float grados) {
-  float result = (float)grados * (float)(ratio / 360.0) * 5.5;
+  float result = (float)grados * (float)IGRAD2PULSOS;
   if ((result < IPULSOSMAX / 2 - posii) && (result > posii - IPULSOSMAX / 2)) {
     return result;
   } else {
@@ -357,7 +358,7 @@ float Igrados2pulsos(float grados) {
     Serial.print(result);
     Serial.print(",");
     Serial.println(posii);
-    return 0;
+    return posii;
   }
 }
 
@@ -374,6 +375,6 @@ float mm2Pulsos(float mm) {
     Serial.print(result);
     Serial.print(",");
     Serial.println(alto);
-    return 0;
+    return alto;
   }
 }
