@@ -2,96 +2,8 @@
 
 #include <util/atomic.h>  // For the ATOMIC_BLOCK macro
 #include <Servo.h>
+#include "Config.h"
 
-// Pinout para el Arduino Mega 2540
-
-//motor derecho
-#define DCD_1 22
-#define DCD_2 23
-
-//motor izquierdo
-#define DCI_1 53
-#define DCI_2 52
-
-// encoder pins (p.e. ENCDA - encoder del motor derecho pin A)
-#define ENCDA 18
-#define ENCDB 19
-#define ENCIA 20
-#define ENCIB 21
-
-// pins del stepper motor
-#define STEP 25
-#define DIR 27
-
-// pins del stepper driver
-#define SRESET 31  // resets internal logic and step table, defualt HIGH during operation
-#define SLEEP 29   // low power mode, needs 1ms to reactivate, HIGH during operation
-#define ENAPIN 39  // Enables outputs, defualt inactive/low during operation
-
-// para micropasos del stepper:
-#define MS1 37
-#define MS2 35
-#define MS3 33
-
-//pins de los servos
-#define SERVO1 9   // servo girar
-#define SERVO2 10  // servo abrir
-
-// pins de fin de carrera
-#define FINE 40
-#define FINI 44
-#define FINZ 42
-
-
-//pins pwm motores DC
-#define PWMD 2  // PWM Velocidad
-#define PWMI 3
-
-// motor izquierda: brazo extremo
-// motor derecha: brazo interior
-
-int posprev;
-int dird;
-int gradd;
-int diri;
-int gradi;
-int pulsosd = 0;
-int pulsosi = 0;
-const float ratio = 1579;  //1579*4
-int iterations = 0;
-
-// numero de pulsos/grados maximos
-const int DGRADOSMAX = 190;
-const int IGRADOSMAX = 280;
-#define DGRAD2PULSOS 19.7375 // 1579/360*4.5
-#define IGRAD2PULSOS 31.9322  //1579/360*7.2803
-#define DPULSOS2GRAD 1/DGRAD2PULSOS
-#define IPULSOS2GRAD 1/IGRAD2PULSOS
-const int DPULSOSMAX = (int)((float)DGRADOSMAX*(float)DGRAD2PULSOS);
-const int IPULSOSMAX = (int)((float)IGRADOSMAX * (float)IGRAD2PULSOS);
-const int ZMMMAX = 270;
-const int ZPULSOSMAX = 270;
-
-//int contador = 0;
-//int contador2 = 0;
-int rounds = 0;
-int limit;
-float alto;
-float prevalto;
-int pinza;
-bool initialized = false;
-bool communicating = false;
-
-// numero maximo de pasos/pulsos
-
-volatile int posid = 0;  // specify posi as volatile
-long prevT = 0;
-float eprevd = 0;
-float eintegrald = 0;
-volatile int posii = 0;  // specify posi as volatile
-float eprevi = 0;
-float eintegrali = 0;
-int giro;
 
 // init servos
 Servo girar;
@@ -129,7 +41,7 @@ void setup() {
 
   girar.attach(SERVO1);
   abrir.attach(SERVO2);
-  setPinza(20,30);
+  setPinza(20, 30);
 
   pinMode(FINE, INPUT_PULLUP);
   pinMode(FINI, INPUT_PULLUP);
@@ -153,15 +65,38 @@ void setup() {
   stepper.setAccelerationInStepsPerSecondPerSecond(200);
 
   initialized = false;
-
 }
 
 void loop() {
 
+  if (initialized == false) {
+    stepper.moveToHomeInMillimeters(1, 10, 270, FINZ);
+    alto = 0;
+    while (FINI != false) {
+      setMotor(1, 20, PWMD, DCD_1, DCD_2);
+      delay(1);
+    }
+    setMotor(0, 0, PWMD, DCD_1, DCD_2); // stop motor
+    DGRADOSMAX = DPULSOS2GRAD*posid; // set max grados to current posi
+    posid, pulsosd, pos_d = DGRAD2PULSOS * DGRADOSMAX;  //set posi vars to current posi
+
+    while (FINE != false) {
+      setMotor(1, 20, PWMI, DCI_1, DCI_2);
+      delay(1);
+    }
+    setMotor(0, 0, PWMI, DCI_1, DCI_2);
+    IGRADOSMAX = IPULSOS2GRAD*posid; // set max grados to current posi
+    posii, pulsosi, pos_i = IGRAD2PULSOS * IGRADOSMAX;  //set posi vars to current posi
+
+    initialized = true;
+    pulsosd, pulsosi = 0; // goto home
+  }
+
+
   // wait until serial available
   if (Serial.available()) {
     communicating = true;
-    // opcode syntax (int dird, int diri, int gradd, int gradi, int alto, boolean pinza)
+    // opcode syntax (int gradd, int gradi, int alto, boolean pinza)
     gradd = (int)Serial.readStringUntil(',').toInt();
     gradi = (int)Serial.readStringUntil(',').toInt();
     alto = (float)Serial.readStringUntil(',').toInt();
@@ -186,8 +121,8 @@ void loop() {
 
   // Read the position in an atomic block to avoid a potential
   // misread if the interrupt coincides with this code running
-  int pos_d = 0;
-  int pos_i = 0;
+  pos_d = 0;
+  pos_i = 0;
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
     pos_d = posid;
     pos_i = posii;
@@ -197,17 +132,17 @@ void loop() {
     Serial.print(",");
     Serial.print(millis());
     Serial.print(",");
-    Serial.print((int)(pulsosd*DPULSOS2GRAD));
+    Serial.print((int)(pulsosd * DPULSOS2GRAD));
     Serial.print(",");
-    Serial.println((int)(pos_d*DPULSOS2GRAD));
+    Serial.println((int)(pos_d * DPULSOS2GRAD));
 
     Serial.print(2);
     Serial.print(",");
     Serial.print(millis());
     Serial.print(",");
-    Serial.print((int)(pulsosi*IPULSOS2GRAD));
+    Serial.print((int)(pulsosi * IPULSOS2GRAD));
     Serial.print(",");
-    Serial.println((int)(pos_i*IPULSOS2GRAD));
+    Serial.println((int)(pos_i * IPULSOS2GRAD));
 
     Serial.print(3);
     Serial.print(",");
@@ -285,12 +220,12 @@ void setMotor(int dir, int pwmVal, int pwm, int pin1, int pin2) {
 }
 
 void setPinza(int grad, int abierto) {
-  grad = map(grad, 0, 90, 20, 90) ;
+  grad = map(grad, 0, 90, 20, 90);
   girar.write(grad);
   abrir.write(abierto == 0 ? 30 : 90);
 }
 
-float setPower(float u) { // anti windup and speed limit
+float setPower(float u) {  // anti windup and speed limit
   float pwr = fabs(u);
   if (pwr > 200) {
     pwr = 200;
@@ -315,7 +250,6 @@ void handler_encoderD() {
     else
       posid--;
   }
-
 }
 void handler_encoderI() {
   if (digitalRead(ENCIA) == HIGH) {
@@ -324,14 +258,13 @@ void handler_encoderI() {
     else
       posii--;
   }
-
 }
 
 // conversion de grados a pulsos del motor derecho /brazo interno
 // comprobar si el punto esta dentro el campo de trabajo
 float Dgrados2pulsos(float grados) {
   float result = (float)grados * (float)DGRAD2PULSOS;
-  if ((result < DPULSOSMAX / 2 - posid) && (result > posid - DPULSOSMAX / 2)) {
+  if ((result < DPULSOSMAX - posid) && (result > posid - DPULSOSMAX)) {
     return result;
   } else {
     Serial.print(4);
@@ -348,7 +281,7 @@ float Dgrados2pulsos(float grados) {
 // lo igual, para el motor izquierdo
 float Igrados2pulsos(float grados) {
   float result = (float)grados * (float)IGRAD2PULSOS;
-  if ((result < IPULSOSMAX / 2 - posii) && (result > posii - IPULSOSMAX / 2)) {
+  if ((result < IPULSOSMAX - posii) && (result > posii - IPULSOSMAX )) {
     return result;
   } else {
     Serial.print(4);
