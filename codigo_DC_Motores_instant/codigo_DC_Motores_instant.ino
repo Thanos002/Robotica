@@ -70,7 +70,7 @@ void setup() {
 void loop() {
 
   if (initialized == false) {
-    stepper.moveToHomeInMillimeters(1, 10, 270, FINZ);
+    stepper.moveToHomeInMillimeters(1, 10, 270, FINZ); // normally closed!!!
     alto = 0;
     while (FINI != false) {
       setMotor(1, 20, PWMD, DCD_1, DCD_2);
