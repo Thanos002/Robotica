@@ -7,7 +7,7 @@ void cinematicaDirecta() {
 }
 
 // CINEMATICA INVERSA
-void cinematicaInversa(float x, float y) {
+float[] cinematicaInversa(float x, float y) {
   theta2 = acos((sq(x) + sq(y) - sq(L1) - sq(L2)) / (2 * L1 * L2));
   if (x < 0 & y < 0) {
     theta2 = (-1) * theta2;
@@ -53,16 +53,32 @@ void cinematicaInversa(float x, float y) {
   theta2=round(theta2);
   phi=round(phi);
   
+  float[] result = [theta1, theta2, phi];
+  return result;
+  
 }
 
 //Trayectoria recta -> Calcula las velocidades angulares w1,w2 para cada instante de tiempo en función de los ángulos q1,q2 que toma en cada instante
 //Se necesitan las coordenadas del punto A de partida y las del B de llegada, además del tiempo t en el que se desea llegar de A hasta B.
 //Pasar los ángulos en grados
-void recta(float theta1, float theta2, float Xa, float Ya, float Xb, float Yb, float t){
+float[] recta(float theta1, float theta2, float Xa, float Ya, float Xb, float Yb, float t){
   q1=theta1*PI/180;   //Transformación de grados a radianes
   q2=theta2*PI/180;
   w1=(-cos(q1 + q2)/(L1*cos(q1 + q2)*sin(q1) - L1*sin(q1 + q2)*cos(q1)))*(Xb-Xa)/t                        + (-sin(q1 + q2)/(L1*cos(q1 + q2)*sin(q1) - L1*sin(q1 + q2)*cos(q1)))*(Yb-Ya)/t;
   w2=((L2*cos(q1 + q2) + L1*cos(q1))/(L1*L2*cos(q1 + q2)*sin(q1) - L1*L2*sin(q1 + q2)*cos(q1)))*(Xb-Xa)/t + ((L2*sin(q1 + q2) + L1*sin(q1))/(L1*L2*cos(q1 + q2)*sin(q1) - L1*L2*sin(q1 + q2)*cos(q1)))*(Yb-Ya)/t;
-  w1=round(w1);
-  w2=round(w2);
+  //w1=round(w1);
+  //w2=round(w2);
+  float[] result = [w1, w2];
+  if(result>70){  //limit spped output to 70, if not increase time
+    return recta(theta1, theta2, Xa, Ya, Xb, Yb, t+1);
+  }
+  else{
+    return result;
+  }
 }
+
+void setMotorSpeed(int w1, int w2){
+  v1=(w1, 0, 70, 0, 255);  // 70 rps corresponds to PWM 255
+  v2=(w2, 0, 70, 0, 255);
+}
+
