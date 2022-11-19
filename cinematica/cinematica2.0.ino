@@ -78,13 +78,13 @@ int[] recta(float theta1, float theta2, float Xa, float Ya, float Xb, float Yb, 
   }
 }
 
-float[] DdegPerSec2RPM(float degPs){ //converts deg per seconds of extremo to actual motor speed
-  result = 0.1667*FACTOR_A*degPs;
+float DdegPerSec2RPM(float degPs){ //converts deg per seconds of extremo to actual motor speed
+  float result = 0.1667*FACTOR_A*degPs;
   return result;
 }
 
-float[] IdegPerSec2RPM(float degPs){ //converts deg per seconds of interior to actual motor speed
-  result = 0.1667*FACTOR_B*degPs;
+float IdegPerSec2RPM(float degPs){ //converts deg per seconds of interior to actual motor speed
+  float result = 0.1667*FACTOR_B*degPs;
   return result;
 }
 
