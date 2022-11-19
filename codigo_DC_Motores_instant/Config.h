@@ -42,7 +42,6 @@
 #define FINI 44
 #define FINZ 42
 
-
 //pins pwm motores DC
 #define PWMD 2  // PWM Velocidad
 #define PWMI 3
@@ -64,16 +63,26 @@ int pos_d;
 int pos_i;
 
 // numero de pulsos/grados maximos EN UNA DIRRECION 
-int DGRADOSMAX = 95;
-int IGRADOSMAX = 140;
-#define DGRAD2PULSOS 19.7375 // 1579/360*4.5
-#define IGRAD2PULSOS 31.9322  //1579/360*7.2803
-#define DPULSOS2GRAD 1/DGRAD2PULSOS
-#define IPULSOS2GRAD 1/IGRAD2PULSOS
-int DPULSOSMAX = (int)((float)DGRADOSMAX*(float)DGRAD2PULSOS);
-int IPULSOSMAX = (int)((float)IGRADOSMAX * (float)IGRAD2PULSOS);
+int DGRADOSMAX = 120;
+int IGRADOSMAX = 139;
+#define FACTOR_A 3.6  // =72/20
+#define FACTOR_B 5.82424  // =62/20 * 62/33
+#define DGRAD2PULSOS ((float)ratio/360.0)*FACTOR_A // 1579/360*3.6
+#define IGRAD2PULSOS ((float)ratio/360.0)*FACTOR_B  //1579/360*5.82424
+#define DPULSOS2GRAD 1.0/(float)DGRAD2PULSOS
+#define IPULSOS2GRAD 1.0/(float)IGRAD2PULSOS
+float DPULSOSMAX = ((float)DGRADOSMAX*(float)DGRAD2PULSOS);
+float IPULSOSMAX = ((float)IGRADOSMAX * (float)IGRAD2PULSOS);
 int ZMMMAX = 270;
 int ZPULSOSMAX = 270;
+
+float ed, ei, dedtd, dedti, ud, ui, pwrd, pwri, vd, vi;
+int mode;
+
+// PID constants
+float kp = 4.5;
+float kd = 0.2;
+float ki = 0.1;
 
 //int contador = 0;
 //int contador2 = 0;
@@ -87,11 +96,13 @@ bool communicating = false;
 
 // numero maximo de pasos/pulsos
 
-volatile int posid = 0;  // specify posi as volatile
+volatile float posid = 0;  // specify posi as volatile
 long prevT = 0;
+long currT;
+float deltaT;
 float eprevd = 0;
 float eintegrald = 0;
-volatile int posii = 0;  // specify posi as volatile
+volatile float posii = 0;  // specify posi as volatile
 float eprevi = 0;
 float eintegrali = 0;
 int giro;

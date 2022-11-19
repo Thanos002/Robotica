@@ -43,7 +43,7 @@ void setup() {
   abrir.attach(SERVO2);
   setPinza(20, 30);
 
-  pinMode(FINE, INPUT_PULLUP);
+  pinMode(FINE, INPUT_PULLUP);  // fin de carrera brazo exterior izquierdo
   pinMode(FINI, INPUT_PULLUP);
   pinMode(FINZ, INPUT_PULLUP);
 
@@ -59,37 +59,41 @@ void setup() {
   stepper.connectToPins(STEP, DIR);
   stepper.setStepsPerRevolution(200);
   stepper.setStepsPerMillimeter(25);
-  stepper.setSpeedInStepsPerSecond(400);
-  stepper.setAccelerationInStepsPerSecondPerSecond(200);
   stepper.setSpeedInStepsPerSecond(600);
   stepper.setAccelerationInStepsPerSecondPerSecond(200);
 
-  initialized = false;
+  initialized = true;
 }
 
 void loop() {
 
   if (initialized == false) {
-    stepper.moveToHomeInMillimeters(1, 10, 270, FINZ); // normally closed!!!
-    alto = 0;
-    while (FINI != false) {
-      setMotor(1, 20, PWMD, DCD_1, DCD_2);
+
+    delay(5000);
+    while (digitalRead(FINI) == HIGH) {
+      setMotor(-1, 100, PWMD, DCD_1, DCD_2);
       delay(1);
     }
-    setMotor(0, 0, PWMD, DCD_1, DCD_2); // stop motor
-    DGRADOSMAX = DPULSOS2GRAD*posid; // set max grados to current posi
+    setMotor(0, 0, PWMD, DCD_1, DCD_2);                 // stop motor
     posid, pulsosd, pos_d = DGRAD2PULSOS * DGRADOSMAX;  //set posi vars to current posi
 
-    while (FINE != false) {
-      setMotor(1, 20, PWMI, DCI_1, DCI_2);
+    delay(2000);
+
+    while (digitalRead(FINE) == HIGH) {
+      setMotor(1, 120, PWMI, DCI_1, DCI_2);
       delay(1);
     }
     setMotor(0, 0, PWMI, DCI_1, DCI_2);
-    IGRADOSMAX = IPULSOS2GRAD*posid; // set max grados to current posi
     posii, pulsosi, pos_i = IGRAD2PULSOS * IGRADOSMAX;  //set posi vars to current posi
 
+    delay(5000);
+    stepper.moveToHomeInMillimeters(1, 10, 270, FINZ);  // normally closed!!!
+    alto = 0;
+
     initialized = true;
-    pulsosd, pulsosi = 0; // goto home
+    stepper.moveToPositionInMillimeters(-20);
+    delay(500);
+    pulsosd, pulsosi = 0;  // goto home
   }
 
 
@@ -97,6 +101,7 @@ void loop() {
   if (Serial.available()) {
     communicating = true;
     // opcode syntax (int gradd, int gradi, int alto, boolean pinza)
+    mode = (int)Serial.readStringUntil(',').toInt();  //0 cin directa, 1 cin inversa, 2 trayctoria, ...
     gradd = (int)Serial.readStringUntil(',').toInt();
     gradi = (int)Serial.readStringUntil(',').toInt();
     alto = (float)Serial.readStringUntil(',').toInt();
@@ -105,18 +110,14 @@ void loop() {
     pulsosd = Dgrados2pulsos(gradd);
     pulsosi = Igrados2pulsos(gradi);
 
-    stepper.moveToPositionInMillimeters(-alto);
+    stepper.setTargetPositionInMillimeters(-alto);
     setPinza(giro, pinza);
   }
 
-  // PID constants
-  float kp = 5;
-  float kd = 0.1;
-  float ki = 0.1;
 
   // time difference
-  long currT = micros();
-  float deltaT = ((float)(currT - prevT)) / (1.0e6);
+  currT = micros();
+  deltaT = ((float)(currT - prevT)) / (1.0e6);
   prevT = currT;
 
   // Read the position in an atomic block to avoid a potential
@@ -154,34 +155,33 @@ void loop() {
   }
   iterations = iterations + 1;
 
-  // error
-
-  float ed = pos_d - pulsosd;
-  float ei = pos_i - pulsosi;
+  ed = pos_d - pulsosd;
+  ei = pos_i - pulsosi;
 
   // derivative
-  float dedtd = (ed - eprevd) / (deltaT);
-  float dedti = (ei - eprevi) / (deltaT);
+  dedtd = (ed - eprevd) / (deltaT);
+  dedti = (ei - eprevi) / (deltaT);
 
   // integral
   eintegrald = eintegrald + ed * deltaT;
   eintegrali = eintegrali + ei * deltaT;
 
   // control signal
-  float ud = kp * ed + kd * dedtd + ki * eintegrald;
-  float ui = kp * ei + kd * dedti + ki * eintegrali;
+  ud = kp * ed + kd * dedtd + ki * eintegrald;
+  ui = kp * ei + kd * dedti + ki * eintegrali;
 
   // motor power
-  float pwrd = setPower(ud);
-  float pwri = setPower(ui);
+  pwrd = setPower(ud, vd);
+  pwri = setPower(ui, vi);
 
   // motor direction
-  int dird = setDir(dird, ud);
-  int diri = setDir(diri, ui);
+  dird = setDir(dird, ud);
+  diri = setDir(diri, ui);
 
   // signal the motor
   setMotor(dird, pwrd, PWMD, DCD_1, DCD_2);
   setMotor(diri, pwri, PWMI, DCI_1, DCI_2);
+  stepper.processMovement();
 
   // store previous errors
   eprevd = ed;
@@ -225,10 +225,10 @@ void setPinza(int grad, int abierto) {
   abrir.write(abierto == 0 ? 30 : 90);
 }
 
-float setPower(float u) {  // anti windup and speed limit
+float setPower(float u, float v) {  // anti windup and speed limit
   float pwr = fabs(u);
-  if (pwr > 200) {
-    pwr = 200;
+  if (pwr > v) {
+    pwr = v;
   }
   return pwr;
 }
@@ -245,10 +245,13 @@ int setDir(int dir, float u) {
 
 void handler_encoderD() {
   if (digitalRead(ENCDA) == HIGH) {
-    if (digitalRead(ENCDB) == LOW)
+    if (digitalRead(ENCDB) == LOW) {
       posid++;
-    else
+      posii -= 0.53;
+    } else {
       posid--;
+      posii += 0.53;
+    }
   }
 }
 void handler_encoderI() {
@@ -264,7 +267,7 @@ void handler_encoderI() {
 // comprobar si el punto esta dentro el campo de trabajo
 float Dgrados2pulsos(float grados) {
   float result = (float)grados * (float)DGRAD2PULSOS;
-  if ((result < DPULSOSMAX - posid) && (result > posid - DPULSOSMAX)) {
+  if ((result < DPULSOSMAX) && (result > -DPULSOSMAX)) {
     return result;
   } else {
     Serial.print(4);
@@ -281,7 +284,7 @@ float Dgrados2pulsos(float grados) {
 // lo igual, para el motor izquierdo
 float Igrados2pulsos(float grados) {
   float result = (float)grados * (float)IGRAD2PULSOS;
-  if ((result < IPULSOSMAX - posii) && (result > posii - IPULSOSMAX )) {
+  if ((result < IPULSOSMAX) && (result > -IPULSOSMAX)) {
     return result;
   } else {
     Serial.print(4);
