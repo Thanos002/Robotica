@@ -61,15 +61,16 @@ float[] cinematicaInversa(float x, float y) {
 //Trayectoria recta -> Calcula las velocidades angulares w1,w2 para cada instante de tiempo en función de los ángulos q1,q2 que toma en cada instante
 //Se necesitan las coordenadas del punto A de partida y las del B de llegada, además del tiempo t en el que se desea llegar de A hasta B.
 //Pasar los ángulos en grados, tiempo en segundos, velocidad en grados/segundo
-float[] recta(float theta1, float theta2, float Xa, float Ya, float Xb, float Yb, float t){
+int[] recta(float theta1, float theta2, float Xa, float Ya, float Xb, float Yb, float t){
   q1=theta1*PI/180;   //Transformación de grados a radianes
   q2=theta2*PI/180;
   w1=(-cos(q1 + q2)/(L1*cos(q1 + q2)*sin(q1) - L1*sin(q1 + q2)*cos(q1)))*(Xb-Xa)/t                        + (-sin(q1 + q2)/(L1*cos(q1 + q2)*sin(q1) - L1*sin(q1 + q2)*cos(q1)))*(Yb-Ya)/t;
   w2=((L2*cos(q1 + q2) + L1*cos(q1))/(L1*L2*cos(q1 + q2)*sin(q1) - L1*L2*sin(q1 + q2)*cos(q1)))*(Xb-Xa)/t + ((L2*sin(q1 + q2) + L1*sin(q1))/(L1*L2*cos(q1 + q2)*sin(q1) - L1*L2*sin(q1 + q2)*cos(q1)))*(Yb-Ya)/t;
   w1=round(w1);
   w2=round(w2);
-  float[] result = [w1, w2];
-  if(result>70){  //limit spped output to 70, if not increase time
+  vz=round((z-alto)/t);
+  int[] result = [w1, w2, vz];
+  if(w1>70 || w2 >70 || vz>30){  //limit speed output to 70, if not increase time
     return recta(theta1, theta2, Xa, Ya, Xb, Yb, t+1);
   }
   else{
@@ -87,8 +88,9 @@ float[] IdegPerSec2RPM(float degPs){ //converts deg per seconds of interior to a
   return result;
 }
 
-void setMotorSpeed(int w1, int w2){
-  vd=(w1, 0, 70, 0, 255);  // 70 rps corresponds to PWM 255
-  vi=(w2, 0, 70, 0, 255);
+void setMotorSpeed(int[] speeds){
+  vd=(speeds[0], 0, 70, 0, 255);  // 70 rps corresponds to PWM 255
+  vi=(speeds[1], 0, 70, 0, 255);
+  stepper.setSpeedInMillimetersPerSecond(speeds[2]);
 }
 
