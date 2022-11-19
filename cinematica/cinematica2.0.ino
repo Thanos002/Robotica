@@ -1,5 +1,5 @@
 // CINEMATICA DIRECTA
-void cinematicaDirecta() {
+void cinematicaDirecta(float theta1, float theta2) {
   float theta1F = theta1 * PI / 180;   // grados a radianes
   float theta2F = theta2 * PI / 180;
   xP = round(L1 * cos(theta1F) + L2 * cos(theta1F + theta2F));
@@ -60,14 +60,14 @@ float[] cinematicaInversa(float x, float y) {
 
 //Trayectoria recta -> Calcula las velocidades angulares w1,w2 para cada instante de tiempo en función de los ángulos q1,q2 que toma en cada instante
 //Se necesitan las coordenadas del punto A de partida y las del B de llegada, además del tiempo t en el que se desea llegar de A hasta B.
-//Pasar los ángulos en grados
+//Pasar los ángulos en grados, tiempo en segundos, velocidad en grados/segundo
 float[] recta(float theta1, float theta2, float Xa, float Ya, float Xb, float Yb, float t){
   q1=theta1*PI/180;   //Transformación de grados a radianes
   q2=theta2*PI/180;
   w1=(-cos(q1 + q2)/(L1*cos(q1 + q2)*sin(q1) - L1*sin(q1 + q2)*cos(q1)))*(Xb-Xa)/t                        + (-sin(q1 + q2)/(L1*cos(q1 + q2)*sin(q1) - L1*sin(q1 + q2)*cos(q1)))*(Yb-Ya)/t;
   w2=((L2*cos(q1 + q2) + L1*cos(q1))/(L1*L2*cos(q1 + q2)*sin(q1) - L1*L2*sin(q1 + q2)*cos(q1)))*(Xb-Xa)/t + ((L2*sin(q1 + q2) + L1*sin(q1))/(L1*L2*cos(q1 + q2)*sin(q1) - L1*L2*sin(q1 + q2)*cos(q1)))*(Yb-Ya)/t;
-  //w1=round(w1);
-  //w2=round(w2);
+  w1=round(w1);
+  w2=round(w2);
   float[] result = [w1, w2];
   if(result>70){  //limit spped output to 70, if not increase time
     return recta(theta1, theta2, Xa, Ya, Xb, Yb, t+1);
@@ -77,8 +77,18 @@ float[] recta(float theta1, float theta2, float Xa, float Ya, float Xb, float Yb
   }
 }
 
+float[] DdegPerSec2RPM(float degPs){ //converts deg per seconds of extremo to actual motor speed
+  result = 0.1667*FACTOR_A*degPs;
+  return result;
+}
+
+float[] IdegPerSec2RPM(float degPs){ //converts deg per seconds of interior to actual motor speed
+  result = 0.1667*FACTOR_B*degPs;
+  return result;
+}
+
 void setMotorSpeed(int w1, int w2){
-  v1=(w1, 0, 70, 0, 255);  // 70 rps corresponds to PWM 255
-  v2=(w2, 0, 70, 0, 255);
+  vd=(w1, 0, 70, 0, 255);  // 70 rps corresponds to PWM 255
+  vi=(w2, 0, 70, 0, 255);
 }
 
