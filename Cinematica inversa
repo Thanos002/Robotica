@@ -1,4 +1,4 @@
-CinematicaInversa(x, y, len1, len2, &Q1, &Q2); // Para llamar a la funcion
+//CinematicaInversa(x, y, len1, len2, &Q1, &Q2); // Para llamar a la funcion
 
 //Funcion: 
 
@@ -17,12 +17,13 @@ float distance(float x, float y)
 return sqrt(x*x +y*y);
 }
 
+// TODO refactor len1, len2
 void CinematicaInversa(float x, float y, float len1, float len2, float *Q1, float *Q2){
 float r;
 float aux1, aux2;
 r = distance(x,y);
 
-if(y<0 || r<len2){
+if(y<0 || r<len2){  // fuera de campo de trabajo
 SerialUSB.println("Coordenadas no validas")
   }  
 else{
