@@ -3,7 +3,9 @@
 #include <util/atomic.h>  // For the ATOMIC_BLOCK macro
 #include <Servo.h>
 #include "Config.h"
+#include "Control.h"
 
+//Todos los valores en mm, grados!
 
 // init servos
 Servo girar;
@@ -71,7 +73,7 @@ void loop() {
 
     delay(5000);
     while (digitalRead(FINI) == HIGH) {
-      setMotor(-1, 100, PWMD, DCD_1, DCD_2);
+      setMotor(-1, 130, PWMD, DCD_1, DCD_2);
       delay(1);
     }
     setMotor(0, 0, PWMD, DCD_1, DCD_2);                 // stop motor
@@ -80,7 +82,7 @@ void loop() {
     delay(2000);
 
     while (digitalRead(FINE) == HIGH) {
-      setMotor(1, 120, PWMI, DCI_1, DCI_2);
+      setMotor(1, 130, PWMI, DCI_1, DCI_2);
       delay(1);
     }
     setMotor(0, 0, PWMI, DCI_1, DCI_2);
@@ -102,20 +104,84 @@ void loop() {
     communicating = true;
     // opcode syntax (int gradd, int gradi, int alto, boolean pinza)
     mode = (int)Serial.readStringUntil(',').toInt();  //0 cin directa, 1 cin inversa, 2 trayctoria, ...
-    gradd = (int)Serial.readStringUntil(',').toInt();
-    gradi = (int)Serial.readStringUntil(',').toInt();
-    alto = (float)Serial.readStringUntil(',').toInt();
-    giro = (int)Serial.readStringUntil(',').toInt();
-    pinza = (int)Serial.readStringUntil('\n').toInt();
-    pulsosd = Dgrados2pulsos(gradd);
-    pulsosi = Igrados2pulsos(gradi);
+    gradd = (float)Serial.readStringUntil(',').toFloat();
+    gradi = (float)Serial.readStringUntil(',').toFloat();
+    alto = (float)Serial.readStringUntil(',').toFloat();
+    giro = (int)Serial.readStringUntil(',').toFloat();
+    pinza = (int)Serial.readStringUntil(',').toInt();
+    xA = (float)Serial.readStringUntil(',').toFloat();  //punto A, x
+    yA = (float)Serial.readStringUntil(',').toFloat();
+    xB = (float)Serial.readStringUntil(',').toFloat();
+    yB = (float)Serial.readStringUntil('\n').toFloat();
 
     stepper.setTargetPositionInMillimeters(-alto);
     setPinza(giro, pinza);
+
+    switch (mode) {
+      case 0:  // cin directa code per arrival
+        pulsosd = Dgrados2pulsos(gradd);
+        pulsosi = Igrados2pulsos(gradi);
+
+        break;
+      case 1:  // cin inversa code per arrival
+
+        cinematicaInversa(xA, yA, &gradd, &gradi);
+        pulsosd = Dgrados2pulsos(gradd);
+        pulsosi = Igrados2pulsos(gradi);
+        break;
+      case 2:  // trayectoria code per arrival
+        pulsosd = Dgrados2pulsos(45);
+        pulsosi = Dgrados2pulsos(-45);
+        puntos = (int)getDistance(xA, yA, xB, yB) / 10;
+        //dx = (xA - xB) / puntos;
+        //dy = (yB - yA) / puntos;
+        //timer = millis();
+        //dt = getDistance(xA, yA, xB, yB) * 100 / puntos;
+        //tprev, w1, w2 = 0;
+        //vx = (xB - xA) / totalTime;
+        //vy = (xB - xA) / totalTime;
+        break;
+    }
   }
 
+  if (mode == 1) {
+    //cinematica inversa code in PID loop
+  }
 
-  // time difference
+  if (mode == 2) {
+    //trayectoria code in PID loop
+    //timer = millis();
+    x_line = xA + (xB - xA) * line_increment / puntos;
+    y_line = xA + (xB - xA) * line_increment / puntos;
+    //cinematica();
+    //dx = x_line - x_real;
+    //dy = y_line - y_real;
+    //jacobiana_inversa(gradd, gradi, vx, vy);
+    //wd = map(w1_jac,0,70,0,255);
+    //wi = map(w2_jac,0,70,0,255);
+    //wd, wi = 70;
+
+    c_inputd = posid;
+    c_inputi = posii;
+    cinematicaInversa(x_line, y_line, &c_inputd, &c_inputi);
+    pulsosd = Dgrados2pulsos(c_inputd);
+    pulsosi = Igrados2pulsos(c_inputi);
+
+    //diri_lin = setDir(diri_lin, wi_jac);
+    //dird_lin = setDir(dird_lin, wd_jac);
+    //setMotor(diri_lin, 100, PWMD, DCD_1, DCD_2);
+    //setMotor(diri_lin, 100, PWMI, DCI_1, DCI_2);
+    //w1 = Dgrados2pulsos(w1_jac);
+    //w2 = Igrados2pulsos(w2_jac);
+  }
+  /**
+  if (timer - tprev > 0.9 * dt) {
+    tprev = millis();
+    line_increment++;
+  }
+**/
+
+  // time difference PID
   currT = micros();
   deltaT = ((float)(currT - prevT)) / (1.0e6);
   prevT = currT;
@@ -128,7 +194,7 @@ void loop() {
     pos_d = posid;
     pos_i = posii;
   }
-  if ((iterations % 200 == 0)) {
+  if ((iterations % 1000 == 0)) {
     Serial.print(1);
     Serial.print(",");
     Serial.print(millis());
@@ -158,6 +224,12 @@ void loop() {
   ed = pos_d - pulsosd;
   ei = pos_i - pulsosi;
 
+  if (ed <= 10 && ei <= 10 && line_increment <= puntos) {
+    line_increment++;
+    Serial.println(line_increment);
+  }
+
+
   // derivative
   dedtd = (ed - eprevd) / (deltaT);
   dedti = (ei - eprevi) / (deltaT);
@@ -171,8 +243,8 @@ void loop() {
   ui = kp * ei + kd * dedti + ki * eintegrali;
 
   // motor power
-  pwrd = setPower(ud, vd);
-  pwri = setPower(ui, vi);
+  pwrd = setPower(ud, 255);
+  pwri = setPower(ui, 255);
 
   // motor direction
   dird = setDir(dird, ud);
@@ -247,10 +319,10 @@ void handler_encoderD() {
   if (digitalRead(ENCDA) == HIGH) {
     if (digitalRead(ENCDB) == LOW) {
       posid++;
-      posii -= 0.53;
+      posii -= X_Y_CORR;
     } else {
       posid--;
-      posii += 0.53;
+      posii += X_Y_CORR;
     }
   }
 }
@@ -265,11 +337,12 @@ void handler_encoderI() {
 
 // conversion de grados a pulsos del motor derecho /brazo interno
 // comprobar si el punto esta dentro el campo de trabajo
-float Dgrados2pulsos(float grados) {
-  float result = (float)grados * (float)DGRAD2PULSOS;
-  if ((result < DPULSOSMAX) && (result > -DPULSOSMAX)) {
-    return result;
-  } else {
+float Dgrados2pulsos(float gradosd) {
+  float inputd = gradosd;
+  //gradosd = constrain(gradosd, -DGRADOSMAX, DGRADOSMAX);
+  float result = (float)gradosd * (float)DGRAD2PULSOS;
+  result = (float)gradosd * (float)DGRAD2PULSOS;
+  if ((inputd > DPULSOSMAX) || (inputd < -DPULSOSMAX)) {
     Serial.print(4);
     Serial.print(",");
     Serial.print(1);
@@ -279,14 +352,18 @@ float Dgrados2pulsos(float grados) {
     Serial.println(posid);
     return posid;
   }
+  return result;
 }
 
 // lo igual, para el motor izquierdo
-float Igrados2pulsos(float grados) {
-  float result = (float)grados * (float)IGRAD2PULSOS;
-  if ((result < IPULSOSMAX) && (result > -IPULSOSMAX)) {
-    return result;
-  } else {
+float Igrados2pulsos(float gradosi) {
+  float inputi = gradosi;
+  //gradosi = constrain(gradosi, -IGRADOSMAX, IGRADOSMAX);
+  //limits_index = int((pulsosd - DGRADOSMAX) / -20.0);  // assign pulsosd to limits index
+  //limits_index = constrain(limits_index, 0, 11);       // limit position depending of pulsosd
+  //gradosi = constrain(gradosi, robot_limits_min[limits_index], robot_limits_max[limits_index]);
+  float result = (float)gradosi * (float)IGRAD2PULSOS;
+  if ((inputi > IPULSOSMAX) || (inputi < -IPULSOSMAX)) {
     Serial.print(4);
     Serial.print(",");
     Serial.print(2);
@@ -294,8 +371,8 @@ float Igrados2pulsos(float grados) {
     Serial.print(result);
     Serial.print(",");
     Serial.println(posii);
-    return posii;
   }
+  return result;
 }
 
 // stepper conversion
@@ -313,4 +390,8 @@ float mm2Pulsos(float mm) {
     Serial.println(alto);
     return alto;
   }
+}
+
+float getDistance(float xA, float yA, float xB, float yB) {
+  return sqrt(pow((xB - xA), 2) + pow((yB - yA), 2));
 }

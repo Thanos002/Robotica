@@ -1,7 +1,7 @@
 // Pinout para el Arduino Mega 2540
 
-#ifndef CONFIG
-#define CONFIG
+#ifndef Config
+#define Config
 
 #include <Arduino.h>
 
@@ -51,9 +51,9 @@
 
 int posprev;
 int dird;
-int gradd;
+float gradd;
 int diri;
-int gradi;
+float gradi;
 int pulsosd = 0;
 int pulsosi = 0;
 const float ratio = 1579;  //1579*4
@@ -62,7 +62,7 @@ int iterations = 0;
 int pos_d;
 int pos_i;
 
-// numero de pulsos/grados maximos EN UNA DIRRECION 
+// numero de pulsos/grados maximos EN UNA DIRECCION 
 int DGRADOSMAX = 120;
 int IGRADOSMAX = 139;
 #define FACTOR_A 3.6  // =72/20
@@ -76,7 +76,33 @@ float IPULSOSMAX = ((float)IGRADOSMAX * (float)IGRAD2PULSOS);
 int ZMMMAX = 270;
 int ZPULSOSMAX = 270;
 
-float ed, ei, dedtd, dedti, ud, ui, pwrd, pwri, vd, vi;
+#define DLENGTH 91.61  //primer brazo
+#define ILENGTH 105.92  //segundo brazo
+
+#define X_Y_CORR FACTOR_A/FACTOR_B
+
+#define D_I_CORR 33.0/62.0
+
+#define MAXRPM 70.0
+#define RPM2RADpS 0.10472
+
+#define RAD2DEG 57.2957795
+#define DEG2RAD 0.01745329252
+
+// velocidades maximas de los brazos en rad/s
+#define DMAXSPEED MAXRPM*RPM2RADpS/FACTOR_A  
+#define IMAXSPEED MAXRPM*RPM2RADpS/FACTOR_B
+
+//#define MINRADIUS sqrt(DLENGTH+ILEGNTH*cos(IGRADOSMAX)^2+ILENGTH*sin(IGRADOSMAX)^2)
+
+float robot_limits_min[] = { -140, -140, -140, -140, -140, -140, -140, -130, -120, -110,  -95,  -88};
+float robot_limits_max[] = {  88, 95, 110, 120, 130, 140, 140, 140, 140, 140, 140, 140};
+int limits_index;
+
+float xA, xB, yA, yB, dx, dy, dt, tprev, t, w1, w2, x_line, y_line, y_real, x_real, vy, vx;
+int puntos, line_increment, timer, totalTime;
+
+float ed, ei, dedtd, dedti, ud, ui, pwrd, pwri, vd, vi, w1_jac, w2_jac, v1_jac, v2_jac, c_inputi, c_inputd;
 int mode;
 
 // PID constants
