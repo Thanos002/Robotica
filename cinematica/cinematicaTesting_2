@@ -1,0 +1,104 @@
+/******************************************************************************
+
+                              Online C++ Compiler.
+               Code, Compile, Run and Debug C++ program online.
+Write your code in this editor and press "Run" button to compile and execute it.
+
+*******************************************************************************/
+
+#include <iostream>
+#include <cmath>
+
+#define RAD2GRAD 57.2957795
+#define DEG2RAD 0.01745329252
+
+using namespace std;
+
+float len1 = 4;
+float len2 = 2;
+float x = 2;
+float y = 4;
+
+float Q1, Q2;
+
+//CinematicaInversa(x, y, len1, len2, &Q1, &Q2); // Para llamar a la funcion
+
+//Funcion: 
+
+float
+lawOfCosines (float a, float b, float c)
+{
+  return acosf ((a * a + b * b - c * c) / (2.0f * a * b));
+}
+
+float
+lawOfCosines2 (float a, float b, float c)
+{
+  return acosf ((a * a - b * b - c * c) / (2.0f * b * c));
+}
+
+float
+distance (float x, float y)
+{
+  return sqrt (x * x + y * y);
+}
+
+// TODO refactor len1, len2
+void
+CinematicaInversa (float x, float y, float len1, float len2, float *Q1,
+		   float *Q2)
+{
+  float r;
+  float aux1, aux2;
+  r = distance (x, y);
+
+  if (y < 0 || r < len2)
+    {				// fuera de campo de trabajo
+//SerialUSB.println("Coordenadas no validas")
+    }
+  else
+    {
+      if (r > (len1 + len2))
+	{
+	  r = (len1 + len2) - 0.001f;
+	  //SerialUSB.println("IK overflow->limit");
+	}
+
+      if (x > 0)
+	{
+	  aux1 = atan2 (y, x);	//beta
+	  aux2 = lawOfCosines (r, len1, len2);	//alpha
+	  *Q1 = (aux1 + aux2) * RAD2GRAD;
+	  *Q2 = lawOfCosines2 (r, len1, len2) * RAD2GRAD;
+	}
+      if (x == 0)
+	{
+	  x = x + 0.001f;
+	  aux1 = atan2 (y, x);	//beta
+	  aux2 = lawOfCosines (r, len1, len2);	//alpha
+	  *Q1 = (aux1 + aux2) * RAD2GRAD;
+	  *Q2 = lawOfCosines2 (r, len1, len2) * RAD2GRAD;
+	}
+      if (x < 0)
+	{
+	  aux1 = atan2 (y, x);	//beta
+	  aux2 = lawOfCosines (r, len1, len2);	//alpha
+	  *Q1 = 180 + (aux1 + aux2) * RAD2GRAD;	//180 + pq aux1+aux2 saldrC! <0
+	  *Q2 = lawOfCosines2 (r, len1, len2) * RAD2GRAD;
+	}
+    }
+}
+
+int
+main ()
+{
+
+  x = -2;
+  y = 4;
+  CinematicaInversa (x, y, len1, len2, &Q1, &Q2);
+  cout << Q1 << "; " << Q2;
+
+
+
+  return 0;
+}
