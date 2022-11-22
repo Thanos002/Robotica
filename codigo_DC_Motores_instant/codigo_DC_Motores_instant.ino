@@ -151,6 +151,7 @@ void loop() {
   if (mode == 2) {
     //trayectoria code in PID loop
     //timer = millis();
+    line_increment = 0;
     x_line = xA + (xB - xA) * line_increment / puntos;
     y_line = xA + (xB - xA) * line_increment / puntos;
     //cinematica();

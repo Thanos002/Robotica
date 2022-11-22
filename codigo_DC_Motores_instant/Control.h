@@ -28,7 +28,7 @@ void cinematicaInversa(float x, float y, float *Q1, float *Q2) {
   float aux1, aux2;
   r = distance(x, y);
 
-  if (y < 0 || r < ILENGTH) {  // fuera de campo de trabajo
+  if (y < 0 || r < ILENGTH/2) {  // fuera de campo de trabajo
     Serial.print(4);
     Serial.print(",");
     Serial.print(5);
