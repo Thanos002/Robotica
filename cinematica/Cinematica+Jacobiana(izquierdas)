@@ -1,0 +1,86 @@
+#include <iostream>
+#include <cmath>
+
+using namespace std;
+
+float PI = 3.141592;
+
+#define RAD2DEG 57.2957795
+#define DEG2RAD 0.01745329
+
+float xP, yP, theta1, theta2, phi, q1, q2, w1, w2, vz, vd, vi, z, alto;
+float L1 = 93;
+float L2 = 106.5;
+float FACTOR_A = 3; 
+float FACTOR_B = 4;
+
+// CINEMATICA DIRECTA
+void cinematicaDirecta(float q1, float q2,float *x, float*y){
+    q1=q1*DEG2RAD;
+    q2=q2*DEG2RAD;
+    *x=round(L1*sin(q1) + L2*sin(q1+q2));
+    *y=round(L1*cos(q1) + L2*cos(q1+q2));
+}
+
+
+// CINEMATICA INVERSA
+void cinematicaInversa(float x, float y, float *q1, float *q2){
+    if((x*x + y*y - L1*L1 - L2*L2)/(2*L1*L2)<-1 || (x*x + y*y - L1*L1 - L2*L2)/(2*L1*L2)>1){
+        *q2=0;
+    }
+    else {
+        *q2=acos((x*x + y*y - L1*L1 - L2*L2)/(2*L1*L2));
+    }
+    *q1=atan2(y,x) - atan2(L2*sin(*q2),L1+L2*cos(*q2));
+    
+    *q1=*q1*RAD2DEG;
+    *q2=*q2*RAD2DEG;
+    
+    *q1=90 - *q1;
+    *q2= - *q2;
+}
+
+// JACOBIANA
+void jacobianaDirecta(float q1, float q2, float w1, float w2, float *Vx, float *Vy){
+    if(q2==0){
+        cout<<"Singularidad\n";
+    }
+    else{
+        *Vx=(L1*cos(q1)+L2*cos(q1+q2))*w1 + (L2*cos(q1+q2))*w2;
+        *Vy=(-L1*sin(q1)-L2*sin(q1+q2))*w1 + (-L2*sin(q1+q2))*w2;
+    }
+}
+
+void jacobianaInversa(float q1, float q2, float Vx, float Vy, float *w1, float *w2){
+    if(cos(q1)*sin(q1+q2)-sin(q1)*cos(q1+q2)==0){
+        cout<<"Singularidad\n";
+    }
+    else{
+        *w1=(-sin(q1 + q2)/(L1*cos(q1 + q2)*sin(q1) - L1*sin(q1 + q2)*cos(q1)))*Vx + (-cos(q1 + q2)/(L1*cos(q1 + q2)*sin(q1) - L1*sin(q1 + q2)*cos(q1)))*Vy;
+        *w2=((L2*sin(q1 + q2) + L1*sin(q1))/(L1*L2*cos(q1 + q2)*sin(q1) - L1*L2*sin(q1 + q2)*cos(q1)))*Vx + ((L2*cos(q1 + q2) + L1*cos(q1))/(L1*L2*cos(q1 + q2)*sin(q1) - L1*L2*sin(q1 + q2)*cos(q1)))*Vy;
+    }
+}
+
+
+
+int main()
+{
+    float x=0, y=0, q1=0, q2=0, Vx=0, Vy=0, w1=0, w2=-1;
+    
+    //cinematicaDirecta(q1,q2,&x,&y);
+    cinematicaInversa(x,y,&q1,&q2);
+    jacobianaDirecta(q1,q2,w1,w2,&Vx,&Vy);
+    jacobianaInversa(q1,q2,Vx,Vy,&w1,&w2);
+    
+    
+    
+    cout<<"x = "<<x<<"\n";
+    cout<<"y = "<<y<<"\n";
+    cout<<"q1 = "<<q1<<"\n";
+    cout<<"q2 = "<<q2<<"\n";
+    cout<<"Vx = "<<Vx<<"\n";
+    cout<<"Vy = "<<Vy<<"\n";
+    cout<<"w1 = "<<w1<<"\n";
+    cout<<"w2 = "<<w2<<"\n";
+    return 0;
+}
