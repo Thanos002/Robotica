@@ -124,15 +124,16 @@ void loop() {
 
         break;
       case 1:  // cin inversa code per arrival
-
         cinematicaInversa(xA, yA, &gradd, &gradi);
         pulsosd = Dgrados2pulsos(gradd);
         pulsosi = Igrados2pulsos(gradi);
         break;
       case 2:  // trayectoria code per arrival
-        pulsosd = Dgrados2pulsos(45);
-        pulsosi = Dgrados2pulsos(-45);
-        puntos = (int)getDistance(xA, yA, xB, yB) / 10;
+        line_increment = 0;
+        cinematicaInversa(xA, yA, &gradd, &gradi);
+        pulsosd = Dgrados2pulsos(gradd);
+        pulsosi = Igrados2pulsos(gradi);
+        puntos = (int)getDistance(xA, yA, xB, yB);
         //dx = (xA - xB) / puntos;
         //dy = (yB - yA) / puntos;
         //timer = millis();
@@ -151,7 +152,6 @@ void loop() {
   if (mode == 2) {
     //trayectoria code in PID loop
     //timer = millis();
-    line_increment = 0;
     x_line = xA + (xB - xA) * line_increment / puntos;
     y_line = yA + (yB - yA) * line_increment / puntos;
     //cinematica();
@@ -165,6 +165,12 @@ void loop() {
     c_inputd = posid;
     c_inputi = posii;
     cinematicaInversa(x_line, y_line, &c_inputd, &c_inputi);
+    //Serial.println("inversa call:");
+    //Serial.print(x_line);
+    //Serial.print(y_line);
+    //Serial.println(c_inputd);
+    //Serial.println(c_inputi);
+
     pulsosd = Dgrados2pulsos(c_inputd);
     pulsosi = Igrados2pulsos(c_inputi);
 
@@ -195,7 +201,7 @@ void loop() {
     pos_d = posid;
     pos_i = posii;
   }
-  if ((iterations % 1000 == 0)) {
+  if ((iterations % 500 == 0)) {
     Serial.print(1);
     Serial.print(",");
     Serial.print(millis());
@@ -225,9 +231,10 @@ void loop() {
   ed = pos_d - pulsosd;
   ei = pos_i - pulsosi;
 
-  if (ed <= 10 && ei <= 10 && line_increment <= puntos) {
+  if ((ed < 8) && (ei < 8) && (line_increment <= puntos)) {
     line_increment++;
-    Serial.println(line_increment);
+    //Serial.println("line loop");
+    //Serial.println(line_increment);
   }
 
 
@@ -244,8 +251,8 @@ void loop() {
   ui = kp * ei + kd * dedti + ki * eintegrali;
 
   // motor power
-  pwrd = setPower(ud, 255);
-  pwri = setPower(ui, 255);
+  pwrd = setPower(ud, 170);
+  pwri = setPower(ui, 170);
 
   // motor direction
   dird = setDir(dird, ud);
@@ -339,11 +346,9 @@ void handler_encoderI() {
 // conversion de grados a pulsos del motor derecho /brazo interno
 // comprobar si el punto esta dentro el campo de trabajo
 float Dgrados2pulsos(float gradosd) {
-  float inputd = gradosd;
   //gradosd = constrain(gradosd, -DGRADOSMAX, DGRADOSMAX);
   float result = (float)gradosd * (float)DGRAD2PULSOS;
-  result = (float)gradosd * (float)DGRAD2PULSOS;
-  if ((inputd > DPULSOSMAX) || (inputd < -DPULSOSMAX)) {
+  if ((gradosd > DPULSOSMAX) || (gradosd < -DPULSOSMAX)) {
     Serial.print(4);
     Serial.print(",");
     Serial.print(1);
@@ -353,18 +358,14 @@ float Dgrados2pulsos(float gradosd) {
     Serial.println(posid);
     return posid;
   }
+  //result = constrain(result, -DGRADOSMAX, DGRADOSMAX);
   return result;
 }
 
 // lo igual, para el motor izquierdo
 float Igrados2pulsos(float gradosi) {
-  float inputi = gradosi;
-  //gradosi = constrain(gradosi, -IGRADOSMAX, IGRADOSMAX);
-  //limits_index = int((pulsosd - DGRADOSMAX) / -20.0);  // assign pulsosd to limits index
-  //limits_index = constrain(limits_index, 0, 11);       // limit position depending of pulsosd
-  //gradosi = constrain(gradosi, robot_limits_min[limits_index], robot_limits_max[limits_index]);
   float result = (float)gradosi * (float)IGRAD2PULSOS;
-  if ((inputi > IPULSOSMAX) || (inputi < -IPULSOSMAX)) {
+  if ((gradosi > IPULSOSMAX) || (gradosi < -IPULSOSMAX)) {
     Serial.print(4);
     Serial.print(",");
     Serial.print(2);
@@ -372,7 +373,12 @@ float Igrados2pulsos(float gradosi) {
     Serial.print(result);
     Serial.print(",");
     Serial.println(posii);
+    return posii;
   }
+  //result = constrain(result, -IGRADOSMAX, IGRADOSMAX);
+  //limits_index = int((pulsosd - DGRADOSMAX) / -20.0);  // assign pulsosd to limits index
+  //limits_index = constrain(limits_index, 0, 11);       // limit position depending of pulsosd
+  //gradosi = constrain(gradosi, robot_limits_min[limits_index], robot_limits_max[limits_index]);
   return result;
 }
 

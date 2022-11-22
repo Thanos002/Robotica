@@ -56,7 +56,7 @@ int diri;
 float gradi;
 int pulsosd = 0;
 int pulsosi = 0;
-const float ratio = 1579;  //1579*4
+const float ratio = 1450;  //1579
 int iterations = 0;
 
 int pos_d;
@@ -76,10 +76,12 @@ float IPULSOSMAX = ((float)IGRADOSMAX * (float)IGRAD2PULSOS);
 int ZMMMAX = 270;
 int ZPULSOSMAX = 270;
 
-#define DLENGTH 91.61  //primer brazo
-#define ILENGTH 105.92  //segundo brazo
+#define DLENGTH 92  //primer brazo  91.62
+#define ILENGTH 122  //segundo brazo 106
+#define PENLENGTH 122
 
-#define X_Y_CORR FACTOR_A/FACTOR_B
+//#define X_Y_CORR FACTOR_A/FACTOR_B
+#define X_Y_CORR 0.95
 
 #define D_I_CORR 33.0/62.0
 
