@@ -153,7 +153,7 @@ void loop() {
     //timer = millis();
     line_increment = 0;
     x_line = xA + (xB - xA) * line_increment / puntos;
-    y_line = xA + (xB - xA) * line_increment / puntos;
+    y_line = yA + (yB - yA) * line_increment / puntos;
     //cinematica();
     //dx = x_line - x_real;
     //dy = y_line - y_real;
