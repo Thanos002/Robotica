@@ -43,7 +43,7 @@ void setup() {
 
   girar.attach(SERVO1);
   abrir.attach(SERVO2);
-  setPinza(20, 30);
+  setPinza(0, 0);
 
   pinMode(FINE, INPUT_PULLUP);  // fin de carrera brazo exterior izquierdo
   pinMode(FINI, INPUT_PULLUP);
@@ -300,9 +300,10 @@ void setMotor(int dir, int pwmVal, int pwm, int pin1, int pin2) {
 }
 
 void setPinza(int grad, int abierto) {
-  grad = map(grad, 0, 90, 20, 90);
+  grad = map(grad, 0, 90, 15, 92);
   girar.write(grad);
-  abrir.write(abierto == 0 ? 30 : 90);
+  abrir.write(abierto == 0 ? 25 : 0);
+  //abrir.write(abierto);
 }
 
 float setPower(float u, float v) {  // anti windup and speed limit
