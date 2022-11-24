@@ -80,8 +80,8 @@ void cinematicaInversa_old(float x, float y, float *Q1, float *Q2) {
 void cinematicaDirecta(float q1, float q2,float *x, float*y){
     q1=q1*DEG2RAD;
     q2=q2*DEG2RAD;
-    *x=round(DLENGTH*sin(q1) + ILENGTH*sin(q1+q2));
-    *y=round(DLENGTH*cos(q1) + ILENGTH*cos(q1+q2));
+    *x=DLENGTH*sin(q1) + ILENGTH*sin(q1+q2);
+    *y=DLENGTH*cos(q1) + ILENGTH*cos(q1+q2);
 }
 
 
@@ -179,6 +179,48 @@ void cinematicaInversa(float x, float y, float *Q1, float *Q2) {
   }
   //*Q1 = *Q1 - 90;  // adjust zero position for rest of code
   //*Q2 = -*Q2;
+}
+
+// returns absolute distance between two points (A and B)
+float getDistance(float xA, float yA, float xB, float yB) {
+  return sqrt(pow((xB - xA), 2) + pow((yB - yA), 2));
+}
+
+//returns time of trajectory from A to B with constant velocity v
+float getTrayTime(float xA, float xB, float yA, float yB, float v){
+  float result = getDistance(xA, xB, yA, yB)/(float)v;
+  return result;
+}
+
+float getTrapezVel(float vmax){
+  float result = vmax * (1-accelp);
+}
+
+// return x or y velocity vectors (v1d) given two points and totaltime
+float getV(float time, float a, float b){
+  float result = distance(a,b)/time;
+  if (a-b<0){
+    result = -result;
+  }
+  return result; 
+}
+
+//returns x or y velocigetCurrentVelTrapty depending on trapezoidal position
+float (float timenow, float totaltime, float vmax){
+  if (time<accelp*totaltime){
+    result = vmax*(time/(accelp*totaltime))
+  }
+  else if (time > totaltime*(1-accelp)){
+    result = vmax - vmax*(time - totaltime*(1-accelp)/(totaltime))
+  }
+  else{
+    result = vmax;
+  }
+  return result;
+}
+
+float getVel(float v1d, float t0, float tnow, float totaltime){
+  result = v1d * (t)/accelp
 }
 
 #endif

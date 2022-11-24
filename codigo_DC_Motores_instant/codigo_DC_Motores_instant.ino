@@ -142,6 +142,13 @@ void loop() {
         //vx = (xB - xA) / totalTime;
         //vy = (xB - xA) / totalTime;
         break;
+      case 3:  // solo jacobiana
+        
+        break;
+      case 4:  // jacobiana con linea recta
+
+        break;
+
     }
   }
 
@@ -181,6 +188,13 @@ void loop() {
     //w1 = Dgrados2pulsos(w1_jac);
     //w2 = Igrados2pulsos(w2_jac);
   }
+
+  if (mode ==3){
+    timenow = millis();
+    
+  }
+
+  // error is used instead (see below)
   /**
   if (timer - tprev > 0.9 * dt) {
     tprev = millis();
@@ -225,6 +239,17 @@ void loop() {
     Serial.print((int)alto);
     Serial.print(",");
     Serial.println((int)alto);
+
+    cinematicaDirecta(pos_d * DPULSOS2GRAD, pos_i*DPULSOS2GRAD, &x, &y);
+
+    Serial.print(6);
+    Serial.print(",");
+    Serial.print(x);
+    Serial.print(",");
+    Serial.print(y);
+    Serial.print(",");
+    Serial.println(distance(x,y));
+    // revisar usa de distance()
   }
   iterations = iterations + 1;
 
@@ -400,6 +425,4 @@ float mm2Pulsos(float mm) {
   }
 }
 
-float getDistance(float xA, float yA, float xB, float yB) {
-  return sqrt(pow((xB - xA), 2) + pow((yB - yA), 2));
-}
+

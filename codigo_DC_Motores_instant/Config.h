@@ -101,7 +101,7 @@ float robot_limits_min[] = { -140, -140, -140, -140, -140, -140, -140, -130, -12
 float robot_limits_max[] = {  88, 95, 110, 120, 130, 140, 140, 140, 140, 140, 140, 140};
 int limits_index;
 
-float xA, xB, yA, yB, dx, dy, dt, tprev, t, w1, w2, x_line, y_line, y_real, x_real, vy, vx;
+float xA, xB, yA, yB, dx, dy, dt, tprev, t, w1, w2, x_line, y_line, y_real, x_real, vy, vx, x, y;
 int puntos, line_increment, timer, totalTime;
 
 float ed, ei, dedtd, dedti, ud, ui, pwrd, pwri, vd, vi, w1_jac, w2_jac, v1_jac, v2_jac, c_inputi, c_inputd;
@@ -111,6 +111,8 @@ int mode;
 float kp = 4.5;
 float kd = 0.2;
 float ki = 0.1;
+
+float accelp = 0.1;
 
 //int contador = 0;
 //int contador2 = 0;
