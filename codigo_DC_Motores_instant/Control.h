@@ -1,14 +1,15 @@
 #ifndef Control
 #define Control
 
-#include "Control.h"
-#include "math.h"
+#include "Config.h"
+#include <math.h>
 #include <Arduino.h>
 
+/**
 #define DLENGTH 91.61   //primer brazo
 #define ILENGTH 105.92  //segundo brazo
 #define RAD2DEG 57.2957795
-#define DEG2RAD 0.01745329252
+#define DEG2RAD 0.01745329252 **/
 
 float lawOfCosines(float a, float b, float c) {
   return acosf((a * a + b * b - c * c) / (2.0f * a * b));
@@ -122,6 +123,8 @@ void jacobianaInversa(float q1, float q2, float Vx, float Vy, float *w1, float *
         *w2=((ILENGTH*sin(q1 + q2) + DLENGTH*sin(q1))/(DLENGTH*ILENGTH*cos(q1 + q2)*sin(q1) - DLENGTH*ILENGTH*sin(q1 + q2)*cos(q1)))*Vx + 
         ((ILENGTH*cos(q1 + q2) + DLENGTH*cos(q1))/(DLENGTH*ILENGTH*cos(q1 + q2)*sin(q1) - DLENGTH*ILENGTH*sin(q1 + q2)*cos(q1)))*Vy;
     }
+    *w1 = RAD2DEG* (*w1);
+    *w2 = RAD2DEG * (*w2);
 }
 
 void cinematicaInversa(float x, float y, float *Q1, float *Q2) {
@@ -198,20 +201,18 @@ float getTrapezVel(float vmax){
 
 // return x or y velocity vectors (v1d) given two points and totaltime
 float getV(float time, float a, float b){
-  float result = distance(a,b)/time;
-  if (a-b<0){
-    result = -result;
-  }
+  float result = (a-b)/time;
   return result; 
 }
 
-//returns x or y velocigetCurrentVelTrapty depending on trapezoidal position
-float (float timenow, float totaltime, float vmax){
-  if (time<accelp*totaltime){
-    result = vmax*(time/(accelp*totaltime))
+//returns x or y velocity depending on trapezoidal position
+float getCurrentVelTrap(float timenow, float totaltime, float vmax){
+  float result;
+  if (timenow<accelp*totaltime){
+    result = vmax*(timenow/(accelp*totaltime));
   }
-  else if (time > totaltime*(1-accelp)){
-    result = vmax - vmax*(time - totaltime*(1-accelp)/(totaltime))
+  else if (timenow > totaltime*(1-accelp)){
+    result = vmax - vmax*(timenow - totaltime*(1-accelp)/(totaltime));
   }
   else{
     result = vmax;
@@ -220,7 +221,24 @@ float (float timenow, float totaltime, float vmax){
 }
 
 float getVel(float v1d, float t0, float tnow, float totaltime){
-  result = v1d * (t)/accelp
+  float result = v1d * (t)/accelp;
+}
+
+#define DPS2RPM_D 0.1667*FACTOR_A
+#define DPS2RPM_I 0.1667*FACTOR_B
+
+float DdegPerSec2RPM(float degPs){ //converts deg per seconds of extremo to actual motor speed
+  float result = 0.1667*FACTOR_A*degPs;
+  return result;
+}
+
+float IdegPerSec2RPM(float degPs){ //converts deg per seconds of interior to actual motor speed
+  float result = 0.1667*FACTOR_B*degPs;
+  return result;
+}
+
+void setMotorSpeed(float speed, float *pwm){
+  *pwm = map(speed, 0, 70, 0, 255);
 }
 
 #endif

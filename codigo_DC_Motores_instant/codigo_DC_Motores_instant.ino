@@ -62,7 +62,7 @@ void setup() {
   stepper.setStepsPerRevolution(200);
   stepper.setStepsPerMillimeter(25);
   stepper.setSpeedInStepsPerSecond(600);
-  stepper.setAccelerationInStepsPerSecondPerSecond(200);
+  stepper.setAccelerationInStepsPerSecondPerSecond(300);
 
   initialized = true;
 }
@@ -112,7 +112,10 @@ void loop() {
     xA = (float)Serial.readStringUntil(',').toFloat();  //punto A, x
     yA = (float)Serial.readStringUntil(',').toFloat();
     xB = (float)Serial.readStringUntil(',').toFloat();
-    yB = (float)Serial.readStringUntil('\n').toFloat();
+    yB = (float)Serial.readStringUntil(',').toFloat();
+    vX = (float)Serial.readStringUntil(',').toFloat();
+    vY = (float)Serial.readStringUntil(',').toFloat();
+    vZ = (float)Serial.readStringUntil('\n').toFloat();
 
     stepper.setTargetPositionInMillimeters(-alto);
     setPinza(giro, pinza);
@@ -143,12 +146,21 @@ void loop() {
         //vy = (xB - xA) / totalTime;
         break;
       case 3:  // solo jacobiana
-        
+        target_vel=min(min(v_cart_max_d, v_cart_max_i),10);  //in mm/s
         break;
       case 4:  // jacobiana con linea recta
 
         break;
-
+      case 5:  // velocidades articulares received
+        v_art_max_d = vX*0.7;
+        v_art_max_i = vY*0.7;
+        stepper.setSpeedInStepsPerSecond(6*vZ);
+        break;
+      case 6:  // velocidades cartesianas received
+        v_cart_max_d = vX*0.7;
+        v_cart_max_i = vY*0.7;
+        stepper.setSpeedInStepsPerSecond(6*vZ);
+        break;
     }
   }
 
@@ -189,9 +201,29 @@ void loop() {
     //w2 = Igrados2pulsos(w2_jac);
   }
 
-  if (mode ==3){
-    timenow = millis();
-    
+  if (mode == 3) {  // Jacobiana
+    do {
+      timenow = millis();
+      ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+        pos_d = posid;
+        pos_i = posii;
+      }
+      cinematicaInversa(xA, yA, &c_inputd, &c_inputi);
+      totalTime = getTrayTime(xA, xB, yA, yB, target_vel);
+      v_x = getV(totalTime, xA, xB);
+      v_y = getV(totalTime, yA, yB);
+      q1_now = pos_d * DPULSOS2GRAD;
+      q2_now = pos_i * IPULSOS2GRAD;
+      jacobianaInversa(q1_now, q2_now, v_x, v_y, &target_v1, &target_v2);
+      setMotorSpeed(target_v1, &D_pwm);
+      setMotorSpeed(target_v2, &I_pwm);
+      setMotor(setDir(dird, target_v1), D_pwm, PWMD, DCD_1, DCD_2);
+      setMotor(setDir(diri, target_v2), I_pwm, PWMI, DCI_1, DCI_2);
+    } while (timenow < totalTime);
+    setMotor(0, 0, PWMD, DCD_1, DCD_2);
+    setMotor(0, 0, PWMI, DCI_1, DCI_2);
+    pulsosd = Dgrados2pulsos(pos_d);
+    pulsosi = Igrados2pulsos(pos_i);
   }
 
   // error is used instead (see below)
@@ -240,7 +272,7 @@ void loop() {
     Serial.print(",");
     Serial.println((int)alto);
 
-    cinematicaDirecta(pos_d * DPULSOS2GRAD, pos_i*DPULSOS2GRAD, &x, &y);
+    cinematicaDirecta(pos_d * DPULSOS2GRAD, pos_i * DPULSOS2GRAD, &x, &y);
 
     Serial.print(6);
     Serial.print(",");
@@ -248,7 +280,7 @@ void loop() {
     Serial.print(",");
     Serial.print(y);
     Serial.print(",");
-    Serial.println(distance(x,y));
+    Serial.println(distance(x, y));
     // revisar usa de distance()
   }
   iterations = iterations + 1;
@@ -276,8 +308,8 @@ void loop() {
   ui = kp * ei + kd * dedti + ki * eintegrali;
 
   // motor power
-  pwrd = setPower(ud, 170);
-  pwri = setPower(ui, 170);
+  pwrd = setPower(ud, v_art_max_d);
+  pwri = setPower(ui, v_art_max_i);
 
   // motor direction
   dird = setDir(dird, ud);
@@ -424,5 +456,3 @@ float mm2Pulsos(float mm) {
     return alto;
   }
 }
-
-
