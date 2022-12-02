@@ -201,7 +201,9 @@ void loop() {
     //w2 = Igrados2pulsos(w2_jac);
   }
 
+ 
   if (mode == 3) {  // Jacobiana
+    initialtime = millis();
     do {
       timenow = millis();
       ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
@@ -209,17 +211,20 @@ void loop() {
         pos_i = posii;
       }
       cinematicaInversa(xA, yA, &c_inputd, &c_inputi);
-      totalTime = getTrayTime(xA, xB, yA, yB, target_vel);
-      v_x = getV(totalTime, xA, xB);
-      v_y = getV(totalTime, yA, yB);
+      //totalTime = getTrayTime(xA, xB, yA, yB, target_vel);
+      // position is xA, yA
       q1_now = pos_d * DPULSOS2GRAD;
       q2_now = pos_i * IPULSOS2GRAD;
+      cinematicaInversa(q1_now, q2_now, &x_now, &y_now);
+      timeLeft = getTrayTime(x_now, y_now, yA, yB, target_vel);      
+      v_x = getV(timeLeft, xA, xB);
+      v_y = getV(timeLeft, yA, yB);
       jacobianaInversa(q1_now, q2_now, v_x, v_y, &target_v1, &target_v2);
       setMotorSpeed(target_v1, &D_pwm);
       setMotorSpeed(target_v2, &I_pwm);
       setMotor(setDir(dird, target_v1), D_pwm, PWMD, DCD_1, DCD_2);
       setMotor(setDir(diri, target_v2), I_pwm, PWMI, DCI_1, DCI_2);
-    } while (timenow < totalTime);
+    } while (timeLeft >0.1);  // initial time added
     setMotor(0, 0, PWMD, DCD_1, DCD_2);
     setMotor(0, 0, PWMI, DCI_1, DCI_2);
     pulsosd = Dgrados2pulsos(pos_d);
