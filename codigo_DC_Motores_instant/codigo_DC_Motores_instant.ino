@@ -204,6 +204,8 @@ void loop() {
  
   if (mode == 3) {  // Jacobiana
     initialtime = millis();
+    v_x = getV(timeLeft, xA, xB);
+    v_y = getV(timeLeft, yA, yB);
     do {
       timenow = millis();
       ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
@@ -217,8 +219,7 @@ void loop() {
       q2_now = pos_i * IPULSOS2GRAD;
       cinematicaInversa(q1_now, q2_now, &x_now, &y_now);
       timeLeft = getTrayTime(x_now, y_now, yA, yB, target_vel);      
-      v_x = getV(timeLeft, xA, xB);
-      v_y = getV(timeLeft, yA, yB);
+
       jacobianaInversa(q1_now, q2_now, v_x, v_y, &target_v1, &target_v2);
       setMotorSpeed(target_v1, &D_pwm);
       setMotorSpeed(target_v2, &I_pwm);
