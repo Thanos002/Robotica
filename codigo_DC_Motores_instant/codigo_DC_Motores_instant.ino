@@ -222,6 +222,7 @@ void loop() {
       jacobianaInversa(q1_now, q2_now, v_x, v_y, &target_v1, &target_v2);
       setMotorSpeed(target_v1, &D_pwm);
       setMotorSpeed(target_v2, &I_pwm);
+      //getDir();
       setMotor(setDir(dird, target_v1), D_pwm, PWMD, DCD_1, DCD_2);
       setMotor(setDir(diri, target_v2), I_pwm, PWMI, DCI_1, DCI_2);
     } while (timeLeft >0.1);  // initial time added
