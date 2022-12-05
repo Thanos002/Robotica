@@ -56,8 +56,8 @@ int diri;
 float gradi;
 int pulsosd = 0;
 int pulsosi = 0;
-const float ratio = 1450;  //1579
-int iterations = 0;
+const float ratio = 1579;  //1579  //1450
+long iterations = 0;
 
 int pos_d;
 int pos_i;
@@ -71,17 +71,19 @@ int IGRADOSMAX = 139;
 #define IGRAD2PULSOS ((float)ratio / 360.0) * FACTOR_B  //1579/360*5.82424
 #define DPULSOS2GRAD 1.0 / (float)DGRAD2PULSOS
 #define IPULSOS2GRAD 1.0 / (float)IGRAD2PULSOS
-float DPULSOSMAX = ((float)DGRADOSMAX * (float)DGRAD2PULSOS);
-float IPULSOSMAX = ((float)IGRADOSMAX * (float)IGRAD2PULSOS);
-int ZMMMAX = 270;
-int ZPULSOSMAX = 270;
+#define DPULSOSMAX ((float)DGRADOSMAX * (float)DGRAD2PULSOS)
+#define IPULSOSMAX ((float)IGRADOSMAX * (float)IGRAD2PULSOS)
+#define DSWITCHPULSOS 1830
+#define ISWITCHPULSOS -3480
+#define ZMMMAX 270
+#define ZPULSOSMAX 270
 
 #define DLENGTH 92   //primer brazo  91.62
 #define ILENGTH 122  //segundo brazo 106
 #define PENLENGTH 122
 
 //#define X_Y_CORR FACTOR_A/FACTOR_B
-#define X_Y_CORR 0.95
+#define X_Y_CORR 0.9
 
 #define D_I_CORR 33.0 / 62.0
 
@@ -110,9 +112,7 @@ int mode;
 float timenow, target_vel, target_v1, target_v2, D_pwm, I_pwm, q1_now, q2_now;
 
 // PID constants
-float kp = 4.5;
-float kd = 0.2;
-float ki = 0.1;
+float kp, kd, ki;
 
 float accelp = 0.1;
 
@@ -126,7 +126,11 @@ int pinza;
 bool initialized = false;
 bool communicating = false;
 
-float v_art_max_d, v_art_max_i, v_cart_max_d, v_cart_max_i, vX, vY, vZ;
+float v_cart_max_d, v_cart_max_i, vX, vY, vZ, initialtime, timeLeft, x_now, y_now, pwm_max_d, pwm_max_i;
+float v_art_max_d = 70; // in RPM
+float v_art_max_i = 70;
+
+float vel_buffer_d, vel_buffer_i;
 
 // numero maximo de pasos/pulsos
 

@@ -103,6 +103,10 @@ void cinematicaInversa2(float x, float y, float *q1, float *q2){
     *q2= - *q2;
 }
 
+// velocidades positivas derechas
+// w1, w2 en deg/s
+// target_vel en RPM
+
 // JACOBIANA
 void jacobianaDirecta(float q1, float q2, float w1, float w2, float *Vx, float *Vy){
     if(q2==0){
@@ -146,7 +150,7 @@ void cinematicaInversa(float x, float y, float *Q1, float *Q2) {
       r = (DLENGTH + ILENGTH) - 0.001f;
       Serial.print(4);
       Serial.print(",,");
-      Serial.print(5);
+      Serial.print(6);
       Serial.print(",");
       Serial.print(x);
       Serial.print(",");
@@ -237,7 +241,7 @@ float IdegPerSec2RPM(float degPs){ //converts deg per seconds of interior to act
   return result;
 }
 
-void setMotorSpeed(float speed, float *pwm){
+void setMotorSpeed(float speed, float *pwm){  // maps RPM value to PWM value
   *pwm = map(speed, 0, 70, 0, 255);
 }
 
