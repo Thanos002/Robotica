@@ -69,12 +69,12 @@ int IGRADOSMAX = 139;
 #define FACTOR_B 5.82424                                // =62/20 * 62/33
 #define DGRAD2PULSOS ((float)ratio / 360.0) * FACTOR_A  // 1579/360*3.6
 #define IGRAD2PULSOS ((float)ratio / 360.0) * FACTOR_B  //1579/360*5.82424
-#define DPULSOS2GRAD 1.0 / (float)DGRAD2PULSOS
-#define IPULSOS2GRAD 1.0 / (float)IGRAD2PULSOS
+#define DPULSOS2GRAD 0.06333 // 1.0 / (float)DGRAD2PULSOS
+#define IPULSOS2GRAD 0.0391  //1.0 / (float)IGRAD2PULSOS
 #define DPULSOSMAX ((float)DGRADOSMAX * (float)DGRAD2PULSOS)
 #define IPULSOSMAX ((float)IGRADOSMAX * (float)IGRAD2PULSOS)
-#define DSWITCHPULSOS 1830
-#define ISWITCHPULSOS -3480
+#define DSWITCHPULSOS 1730
+#define ISWITCHPULSOS -3380
 #define ZMMMAX 270
 #define ZPULSOSMAX 270
 

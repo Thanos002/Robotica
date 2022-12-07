@@ -59,10 +59,10 @@ void setup() {
   stepper.connectToPins(STEP, DIR);
   stepper.setStepsPerRevolution(200);
   stepper.setStepsPerMillimeter(25);
-  stepper.setSpeedInStepsPerSecond(800);
+  stepper.setSpeedInStepsPerSecond(600);
   stepper.setAccelerationInStepsPerSecondPerSecond(300);
 
-  initialized = true;
+  initialized = false;
 }
 
 void loop() {
@@ -71,7 +71,7 @@ void loop() {
 
     delay(1000);
     while (digitalRead(FINI) == HIGH) {
-      setMotor(-1, 140, PWMD, DCD_1, DCD_2);
+      setMotor(-1, 160, PWMD, DCD_1, DCD_2);
       delay(1);
     }
     setMotor(0, 0, PWMD, DCD_1, DCD_2);  // stop motor
@@ -81,7 +81,7 @@ void loop() {
     delay(500);
 
     while (digitalRead(FINE) == HIGH) {
-      setMotor(1, 140, PWMI, DCI_1, DCI_2);
+      setMotor(1, 230, PWMI, DCI_1, DCI_2);
       delay(1);
     }
     setMotor(0, 0, PWMI, DCI_1, DCI_2);
@@ -99,8 +99,8 @@ void loop() {
     kp = 4.5;
     kd = 0;
     ki = 0;
-    v_art_max_d = 40;
-    v_art_max_i = 40;
+    v_art_max_d = 70;
+    v_art_max_i = 70;
     // set ID terms to avoid setup overshoot
 
     pulsosd, pulsosi = 0;  // goto home
@@ -138,18 +138,13 @@ void loop() {
     vZ = (float)Serial.readStringUntil('\n').toFloat();
 
     kp = 4.5;
-    kd = 0.2;
-    ki = 0.1;
+    kd = 0.1;
+    ki = 0.08;
 
     switch (mode) {
       case 0:  // cin directa code per arrival
         pulsosd = Dgrados2pulsos(gradd);
         pulsosi = Igrados2pulsos(gradi);
-        Serial.println(pulsosd);
-        Serial.println(pulsosi);
-        Serial.println("POS");
-        Serial.println(pos_d);
-        Serial.println(pos_i);
 
         break;
       case 1:  // cin inversa code per arrival
@@ -239,7 +234,7 @@ void loop() {
     //w1 = Dgrados2pulsos(w1_jac);
     //w2 = Igrados2pulsos(w2_jac);
 
-    if ((ed < 10) && (ei < 10) && (line_increment <= puntos)) {
+    if ((ed < 9) && (ei < 9) && (line_increment <= puntos)) {
       line_increment++;
     }
   }
@@ -298,8 +293,6 @@ void loop() {
   q1_now = pos_d * DPULSOS2GRAD;
   q2_now = pos_i * IPULSOS2GRAD;
 
-
-
   if ((iterations % 200 == 0)) {
     Serial.print(1);
     Serial.print(",");
@@ -307,7 +300,7 @@ void loop() {
     Serial.print(",");
     Serial.print((pulsosd * DPULSOS2GRAD));
     Serial.print(",");
-    Serial.println((pos_d * DPULSOS2GRAD));
+    Serial.println(q1_now);
 
     Serial.print(2);
     Serial.print(",");
@@ -315,7 +308,7 @@ void loop() {
     Serial.print(",");
     Serial.print((pulsosi * IPULSOS2GRAD));
     Serial.print(",");
-    Serial.println((pos_i * IPULSOS2GRAD));
+    Serial.println(q2_now);
 
     Serial.print(3);
     Serial.print(",");
@@ -323,7 +316,7 @@ void loop() {
     Serial.print(",");
     Serial.print(alto);
     Serial.print(",");
-    Serial.println(alto);
+    Serial.println((-1)*stepper.getCurrentPositionInMillimeters());
 
     cinematicaDirecta(pos_d * DPULSOS2GRAD, pos_i * IPULSOS2GRAD, &x, &y);
 
@@ -334,16 +327,6 @@ void loop() {
     Serial.print(y);
     Serial.print(",");
     Serial.println(distance(x, y));
-
-    // Serial.println("UD");
-    // Serial.println(ud);
-    // Serial.println(ui);
-    // Serial.println(ed);
-    // Serial.println(ei);
-    // Serial.println(dedtd);
-    // Serial.println(dedti);
-    // Serial.println(eintegrald);
-    // Serial.println(eintegrali);
   }
   iterations = iterations + 1;
 
@@ -474,7 +457,7 @@ void handler_encoderI() {
 float Dgrados2pulsos(float gradosd) {
   //gradosd = constrain(gradosd, -DGRADOSMAX, DGRADOSMAX);
   float result = (float)gradosd * (float)DGRAD2PULSOS;
-  if ((gradosd > DPULSOSMAX) || (gradosd < -DPULSOSMAX)) {
+  if ((gradosd > DGRADOSMAX) || (gradosd < -DGRADOSMAX)) {
     Serial.print(4);
     Serial.print(",");
     Serial.print(1);
@@ -491,7 +474,7 @@ float Dgrados2pulsos(float gradosd) {
 // lo igual, para el motor izquierdo
 float Igrados2pulsos(float gradosi) {
   float result = (float)gradosi * (float)IGRAD2PULSOS;
-  if ((gradosi > IPULSOSMAX) || (gradosi < -IPULSOSMAX)) {
+  if ((gradosi > IGRADOSMAX) || (gradosi < -IGRADOSMAX)) {
     Serial.print(4);
     Serial.print(",");
     Serial.print(2);
